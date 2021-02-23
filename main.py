@@ -14,7 +14,11 @@ if platform.system() == "OpenBSD":
 # todo: add full and partial paths, fuzzy matching.
 async def process_msg(msg):
     for match in re.findall(r"(?:^|\s)%% ?([\w:\/\.]+)", msg.content):
-        await msg.channel.send(embed = symbol_embed(symbols.get(match.lower())))
+        symbol = symbols.get(match.lower())
+        if symbol is not None:
+            await msg.channel.send(embed = symbol_embed())
+        else:
+            await msg.channel.send("Symbol not found")
 
 
 # Embeds =======================================================================
