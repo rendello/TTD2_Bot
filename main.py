@@ -16,7 +16,7 @@ async def process_msg(msg):
     for match in re.findall(r"(?:^|\s)%% ?([\w:\/\.]+)", msg.content):
         symbol = symbols.get(match.lower())
         if symbol is not None:
-            await msg.channel.send(embed = symbol_embed())
+            await msg.channel.send(embed = symbol_embed(symbol))
         else:
             await msg.channel.send("Symbol not found")
 
