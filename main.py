@@ -10,60 +10,64 @@ import appdirs
 if platform.system() == "OpenBSD":
     import openbsd
 
+# todo: add partial paths, fuzzy matching.
+# todo: allow single filenames, returns all matching paths.
+# todo: consider different data structure for symbols, files.
+# One big hashtable with tuples for colliding elements?
+# Disparate maps for each type means no collision, searching in all maps is trivial.
+# Disperate maps mean elements don't need to carry type information.
+# Maps can be iterated over for fuzzy searching and whatnot.
 
-# todo: add full and partial paths, fuzzy matching.
+# ==============================================================================
 async def process_msg(msg):
-    for match in re.findall(r"(?:^|\s)%% ?([\w:\/\.]+)", msg.content):
-        if "/" in match:
-            # Check against file paths.
-            try:
-                normalized = "/" + re.match(r"^(?:[A-Z:]:)?\/(.*?)/?$", match).group(1).lower()
-            except AttributeError:
-                await msg.channel.send(embed = error_embed("Invalid path"))
-                continue
 
-            path = paths.get(normalized)
-            if path is not None:
-                await msg.channel.send(embed = path_embed(path))
+    matches = re.findall(r"(?:^|\s)%% ?([\w:\/\.]+)", msg.content)
+    if matches != []:
+        embed = discord.Embed(color = 0x55FFFF)
+        for match in matches:
+            if "/" in match:
+                # Check against file paths.
+                try:
+                    normalized = "/" + re.match(r"^(?:[A-Z:]:)?\/(.*?)/?$", match).group(1).lower()
+                except AttributeError:
+                    embed = embed_append_error(embed, f"Invalid path: {match}`")
+                    continue
+
+                path = paths.get(normalized)
+                if path is not None:
+                    embed = embed_append_path(embed, path)
+                else:
+                    embed = embed_append_error(embed, f"Path not found: ::{match}")
             else:
-                await msg.channel.send(embed = error_embed("Path not found."))
-        else:
-            # Check against symbol table.
-            symbol = symbols.get(match.lower())
-            if symbol is not None:
-                await msg.channel.send(embed = symbol_embed(symbol))
-                continue
-            else:
-                await msg.channel.send(embed = error_embed("Symbol not found."))
+                # Check against symbol table.
+                symbol = symbols.get(match.lower())
+                if symbol is not None:
+                    embed = embed_append_symbol(embed, symbol)
+                    continue
+                else:
+                    embed = embed_append_error(embed, f"Symbol not found: {match}")
 
-
+        await msg.channel.send(embed = embed)
 
 
 # Embeds =======================================================================
-def symbol_embed(symbol) -> discord.Embed:
-
-    e = discord.Embed()
-    e.color = 0x55ffff
-
-    description = "Symbol: "
-    if "file" in symbol:
-        path = symbol["file"][2:]
+def embed_append_symbol(e: discord.Embed, symbol) -> discord.Embed:
+    if "file" not in symbol:
+        path_link = "N/A"
+    else:
+        path = symbol["file"][2:]  # Remove drive letter, ie. "C:"
         if "." in path:
             path = path.split(".")[0] + ".html"
-        url = "https://templeos.holyc.xyz/Wb" + path + "#l" + symbol["line"]
-        description += f'[{symbol["symbol"]}]({url})'
-    else:
-        description += f'{symbol["symbol"]}'
+        url = f"https://templeos.holyc.xyz/Wb{path}#l{symbol['line']}"
+        path_link = f"[{symbol['file']}, line {symbol['line']}]({url})"
 
-    description += f"\nType: {symbol['type']}"
+    text = f"Type: {symbol['type']}\nDefinition: {path_link}"
 
-    e.description = description
+    e.add_field(name=symbol['symbol'], value=text, inline=False)
     return e
 
 
-def path_embed(path) -> discord.Embed:
-    e = discord.Embed()
-    e.color = 0x55ffff
+def embed_append_path(e: discord.Embed, path) -> discord.Embed:
     file_types = {
         "HC": "HolyC",
         "TXT": "Text",
@@ -84,7 +88,7 @@ def path_embed(path) -> discord.Embed:
             file_type = file_name_parts[1]
 
         if file_name_parts[-1] == "Z":
-            file_type = file_type + ", compressed"
+            file_type = f"{file_type} (Compressed)"
     
     else:
         url_path = path
@@ -92,21 +96,22 @@ def path_embed(path) -> discord.Embed:
 
 
     url = "https://templeos.holyc.xyz/Wb" + url_path
-    description = f'Path: [::{path}]({url})\nType: {file_type}'
+    text = f"Type: {file_type}\nPath: [::{path}]({url})"
 
-    e.description = description
+    e.add_field(name=path.split("/")[-1], value=text, inline=False)
     return e
 
-def error_embed(error_message) -> discord.Embed:
-    return discord.Embed(description=error_message)
+
+def embed_append_error(e: discord.Embed, error_message) -> discord.Embed:
+    e.add_field(name="[Error]", value=error_message, inline=False)
+    return e
+
 
 # Client and callbacks =========================================================
-
 client = discord.Client()
 
 @client.event
 async def on_ready():
-    # Setup unveil and pledge.
     if platform.system() == "OpenBSD":
         openbsd.pledge("stdio inet dns prot_exec")
 
@@ -116,6 +121,7 @@ async def on_message(msg):
     await process_msg(msg)
 
 
+# ==============================================================================
 if __name__ == "__main__":
 
     # Load token from config. If not available, prompt for token and
@@ -134,17 +140,19 @@ if __name__ == "__main__":
         with open(config_file, "w+") as f:
             json.dump(config, f)
 
-    # Create dictionary of symbols and paths. Key is lowercase name.
     with open("symbol.json", "r") as f:
         tos_data = json.load(f)
 
+    # Make map of symbols. Keys are lowercased symbols.
     symbols = {}
     for s in tos_data["symbols"]:
         symbols[s["symbol"].lower()] = s
 
+    # Make map of full paths, keys are lowercased paths.
     paths = {}
     for p in tos_data["paths"]:
         paths[p.lower()] = p
+
 
     client.run(config["token"])
 
