@@ -14,11 +14,29 @@ if platform.system() == "OpenBSD":
 # todo: add full and partial paths, fuzzy matching.
 async def process_msg(msg):
     for match in re.findall(r"(?:^|\s)%% ?([\w:\/\.]+)", msg.content):
-        symbol = symbols.get(match.lower())
-        if symbol is not None:
-            await msg.channel.send(embed = symbol_embed(symbol))
+        if "/" in match:
+            # Check against file paths.
+            try:
+                normalized = "/" + re.match(r"^(?:[A-Z:]:)?\/(.*?)/?$", match).group(1).lower()
+            except AttributeError:
+                await msg.channel.send(embed = error_embed("Invalid path"))
+                continue
+
+            path = paths.get(normalized)
+            if path is not None:
+                await msg.channel.send(embed = path_embed(path))
+            else:
+                await msg.channel.send(embed = error_embed("Path not found."))
         else:
-            await msg.channel.send("Symbol not found")
+            # Check against symbol table.
+            symbol = symbols.get(match.lower())
+            if symbol is not None:
+                await msg.channel.send(embed = symbol_embed(symbol))
+                continue
+            else:
+                await msg.channel.send(embed = error_embed("Symbol not found."))
+
+
 
 
 # Embeds =======================================================================
@@ -41,6 +59,46 @@ def symbol_embed(symbol) -> discord.Embed:
 
     e.description = description
     return e
+
+
+def path_embed(path) -> discord.Embed:
+    e = discord.Embed()
+    e.color = 0x55ffff
+    file_types = {
+        "HC": "HolyC",
+        "TXT": "Text",
+        "GRA": "Graphics",
+        "BMP": "Windows Bitmap",
+        "DD": "DolDoc",
+        "IN": "Input",
+        "BIN": "Binary",
+        "CPP": "C++",
+    }
+
+    file_name_parts = path.split(".")
+    if len(file_name_parts) > 1:
+        url_path = file_name_parts[0] + ".html"
+
+        file_type = file_types.get(file_name_parts[1])
+        if file_type is None:
+            file_type = file_name_parts[1]
+
+        if file_name_parts[-1] == "Z":
+            file_type = file_type + ", compressed"
+    
+    else:
+        url_path = path
+        file_type = "Directory"
+
+
+    url = "https://templeos.holyc.xyz/Wb" + url_path
+    description = f'Path: [::{path}]({url})\nType: {file_type}'
+
+    e.description = description
+    return e
+
+def error_embed(error_message) -> discord.Embed:
+    return discord.Embed(description=error_message)
 
 # Client and callbacks =========================================================
 
@@ -76,13 +134,17 @@ if __name__ == "__main__":
         with open(config_file, "w+") as f:
             json.dump(config, f)
 
-    # Create dictionary of symbols. Key is lowercase name.
+    # Create dictionary of symbols and paths. Key is lowercase name.
     with open("symbol.json", "r") as f:
-        symbol_list = json.load(f)
+        tos_data = json.load(f)
 
     symbols = {}
-    for s in symbol_list:
+    for s in tos_data["symbols"]:
         symbols[s["symbol"].lower()] = s
+
+    paths = {}
+    for p in tos_data["paths"]:
+        paths[p.lower()] = p
 
     client.run(config["token"])
 
