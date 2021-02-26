@@ -16,38 +16,45 @@ if platform.system() == "OpenBSD":
 # ==============================================================================
 async def process_msg(msg):
 
-    matches = re.findall(r"(?:^|\s)%% ?([\w:\/\.]+)", msg.content)
-    if matches != []:
-        embed = discord.Embed(color = 0x55FFFF)
-        for match in matches:
-            something_found = False
+    matches = re.findall(r"(?:^|\s)%%([\w:\/\.]+)", msg.content)
+    if matches == []:
+        return None
 
-            # Check against absolute file paths.
-            potential = re.match(r"^(?:[A-Z:]:)?\/(.*?)/?$", match)
-            if potential is not None:
-                normalized = "/" + potential.group(1).lower()
+    embed = discord.Embed(color = 0x55FFFF)
+    for match in matches:
 
-                path = paths.get(normalized)
-                if path is not None:
-                    embed = embed_append_path(embed, path)
-                    something_found = True
+        if match.endswith("."):
+            match = match[:-1]  # Could be part of regex.
 
-            # Check against last segments of file paths, ie. `Doc` and `WallPaperFish.HC.Z`.
-            path = paths.get(match.lower())
+        something_found = False
+
+        # Check against absolute file paths.
+        potential = re.match(r"^(?:[A-Z:]:)?\/(.*?)/?$", match)
+        if potential is not None:
+            normalized = "/" + potential.group(1).lower()
+
+            path = paths.get(normalized)
             if path is not None:
                 embed = embed_append_path(embed, path)
                 something_found = True
 
-            # Check against symbol table.
-            symbol = symbols.get(match.lower())
-            if symbol is not None:
-                embed = embed_append_symbol(embed, symbol)
-                something_found = True
+        # Check against last segments of file paths,
+        # ie. `Doc` and `WallPaperFish.HC.Z`.
+        path = paths.get(match.lower())
+        if path is not None:
+            embed = embed_append_path(embed, path)
+            something_found = True
 
-            if not something_found:
-                embed = embed_append_error(embed, f"Symbol, path, or path segment not found: {match}")
+        # Check against symbol table.
+        symbol = symbols.get(match.lower())
+        if symbol is not None:
+            embed = embed_append_symbol(embed, symbol)
+            something_found = True
 
-        await msg.channel.send(embed = embed)
+        if not something_found:
+            embed = embed_append_error(embed, f"Symbol, path, or path segment not found: {match}")
+
+    await msg.channel.send(embed = embed)
 
 
 # Embeds =======================================================================
