@@ -10,13 +10,8 @@ import appdirs
 if platform.system() == "OpenBSD":
     import openbsd
 
-# todo: add partial paths, fuzzy matching.
-# todo: allow single filenames, returns all matching paths.
-# todo: consider different data structure for symbols, files.
-# One big hashtable with tuples for colliding elements?
-# Disparate maps for each type means no collision, searching in all maps is trivial.
-# Disperate maps mean elements don't need to carry type information.
-# Maps can be iterated over for fuzzy searching and whatnot.
+# todo: fuzzy matching.
+# todo: allow multiple path segments per name.
 
 # ==============================================================================
 async def process_msg(msg):
@@ -25,27 +20,32 @@ async def process_msg(msg):
     if matches != []:
         embed = discord.Embed(color = 0x55FFFF)
         for match in matches:
-            if "/" in match:
-                # Check against file paths.
-                try:
-                    normalized = "/" + re.match(r"^(?:[A-Z:]:)?\/(.*?)/?$", match).group(1).lower()
-                except AttributeError:
-                    embed = embed_append_error(embed, f"Invalid path: {match}`")
-                    continue
+            something_found = False
+
+            # Check against absolute file paths.
+            potential = re.match(r"^(?:[A-Z:]:)?\/(.*?)/?$", match)
+            if potential is not None:
+                normalized = "/" + potential.group(1).lower()
 
                 path = paths.get(normalized)
                 if path is not None:
                     embed = embed_append_path(embed, path)
-                else:
-                    embed = embed_append_error(embed, f"Path not found: ::{match}")
-            else:
-                # Check against symbol table.
-                symbol = symbols.get(match.lower())
-                if symbol is not None:
-                    embed = embed_append_symbol(embed, symbol)
-                    continue
-                else:
-                    embed = embed_append_error(embed, f"Symbol not found: {match}")
+                    something_found = True
+
+            # Check against last segments of file paths, ie. `Doc` and `WallPaperFish.HC.Z`.
+            path = paths.get(match.lower())
+            if path is not None:
+                embed = embed_append_path(embed, path)
+                something_found = True
+
+            # Check against symbol table.
+            symbol = symbols.get(match.lower())
+            if symbol is not None:
+                embed = embed_append_symbol(embed, symbol)
+                something_found = True
+
+            if not something_found:
+                embed = embed_append_error(embed, f"Symbol, path, or path segment not found: {match}")
 
         await msg.channel.send(embed = embed)
 
@@ -156,6 +156,9 @@ if __name__ == "__main__":
     for p in tos_data["paths"]:
         paths[p.lower()] = p
 
+        last_segment = p.split("/")[-1]
+        if last_segment != "":
+            paths[last_segment.lower()] = p
 
     client.run(config["token"])
 
