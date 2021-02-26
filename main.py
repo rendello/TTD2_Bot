@@ -98,7 +98,8 @@ def embed_append_path(e: discord.Embed, path) -> discord.Embed:
     url = "https://templeos.holyc.xyz/Wb" + url_path
     text = f"Type: {file_type}\nPath: [::{path}]({url})"
 
-    e.add_field(name=path.split("/")[-1], value=text, inline=False)
+    path_name = path.split("/")[-1] or "/"
+    e.add_field(name=path_name, value=text, inline=False)
     return e
 
 
@@ -148,7 +149,9 @@ if __name__ == "__main__":
     for s in tos_data["symbols"]:
         symbols[s["symbol"].lower()] = s
 
-    # Make map of full paths, keys are lowercased paths.
+    # Make map of full paths, for each value, the keys are:
+    #   - the lowercased path,
+    #   - The lowercased last segment of the path.
     paths = {}
     for p in tos_data["paths"]:
         paths[p.lower()] = p
