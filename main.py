@@ -141,7 +141,7 @@ async def on_message(msg):
 
 # Load token from config. If not available, prompt for token and
 # create config.
-config_dir = pathlib.Path(appdirs.user_config_dir("TTD_bot"))
+config_dir = pathlib.Path(appdirs.user_config_dir("TTD2_bot"))
 config_file = config_dir.joinpath("config.json")
 
 if config_file.exists():
