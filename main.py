@@ -1,6 +1,9 @@
+# SPDX-License-Identifier: BSD-2-Clause
+
+""" The TTD2 Discord chat bot. """
+
 import asyncio
 import platform
-import dataclasses
 import pathlib
 import json
 import re
@@ -12,11 +15,13 @@ if platform.system() == "OpenBSD":
 
 # todo: fuzzy matching.
 # todo: allow multiple path segments per name.
+# todo: allow reprocessing message on edit.
 
 # ==============================================================================
-async def process_msg(msg):
+async def process_msg(text):
+    embed = None
 
-    matches = re.findall(r"(?:^|\s)%%([\w:\/\.]+)", msg.content)
+    matches = re.findall(r"(?:^|\s)%%([\w:\/\.]+)", text)
     if matches == []:
         return None
 
@@ -40,10 +45,11 @@ async def process_msg(msg):
 
         # Check against last segments of file paths,
         # ie. `Doc` and `WallPaperFish.HC.Z`.
-        path = paths.get(match.lower())
-        if path is not None:
-            embed = embed_append_path(embed, path)
-            something_found = True
+        if "/" not in match:
+            path = paths.get(match.lower())
+            if path is not None:
+                embed = embed_append_path(embed, path)
+                something_found = True
 
         # Check against symbol table.
         symbol = symbols.get(match.lower())
@@ -54,7 +60,7 @@ async def process_msg(msg):
         if not something_found:
             embed = embed_append_error(embed, f"Symbol, path, or path segment not found: {match}")
 
-    await msg.channel.send(embed = embed)
+    return embed
 
 
 # Embeds =======================================================================
@@ -126,46 +132,48 @@ async def on_ready():
 
 @client.event
 async def on_message(msg):
-    await process_msg(msg)
+    embed = await process_msg(msg.content)
+    if embed is not None:
+        await msg.channel.send(embed = embed)
 
 
 # ==============================================================================
+
+# Load token from config. If not available, prompt for token and
+# create config.
+config_dir = pathlib.Path(appdirs.user_config_dir("TTD_bot"))
+config_file = config_dir.joinpath("config.json")
+
+if config_file.exists():
+    with open(config_file, "r") as f:
+        config = json.load(f)
+else:
+    config = {}
+    print("Config doesn't exist. Creating one. [ctrl+c to cancel]")
+    config["token"] = input("Bot token: ")
+    config_dir.mkdir(parents=True, exist_ok=True)
+    with open(config_file, "w+") as f:
+        json.dump(config, f)
+
+with open("symbol.json", "r") as f:
+    tos_data = json.load(f)
+
+# Make map of symbols. Keys are lowercased symbols.
+symbols = {}
+for s in tos_data["symbols"]:
+    symbols[s["symbol"].lower()] = s
+
+# Make map of full paths, for each value, the keys are:
+#   - the lowercased path,
+#   - The lowercased last segment of the path.
+paths = {}
+for p in tos_data["paths"]:
+    paths[p.lower()] = p
+
+    last_segment = p.split("/")[-1]
+    if last_segment != "":
+        paths[last_segment.lower()] = p
+
 if __name__ == "__main__":
-
-    # Load token from config. If not available, prompt for token and
-    # create config.
-    config_dir = pathlib.Path(appdirs.user_config_dir("TTD_bot"))
-    config_file = config_dir.joinpath("config.json")
-
-    if config_file.exists():
-        with open(config_file, "r") as f:
-            config = json.load(f)
-    else:
-        config = {}
-        print("Config doesn't exist. Creating one. [ctrl+c to cancel]")
-        config["token"] = input("Bot token: ")
-        config_dir.mkdir(parents=True, exist_ok=True)
-        with open(config_file, "w+") as f:
-            json.dump(config, f)
-
-    with open("symbol.json", "r") as f:
-        tos_data = json.load(f)
-
-    # Make map of symbols. Keys are lowercased symbols.
-    symbols = {}
-    for s in tos_data["symbols"]:
-        symbols[s["symbol"].lower()] = s
-
-    # Make map of full paths, for each value, the keys are:
-    #   - the lowercased path,
-    #   - The lowercased last segment of the path.
-    paths = {}
-    for p in tos_data["paths"]:
-        paths[p.lower()] = p
-
-        last_segment = p.split("/")[-1]
-        if last_segment != "":
-            paths[last_segment.lower()] = p
-
     client.run(config["token"])
 
