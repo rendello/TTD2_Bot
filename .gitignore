@@ -16,3 +16,4 @@ dmypy.json
 pip-delete-this-directory.txt
 pip-log.txt
 todo
+.coverage

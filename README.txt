@@ -1,13 +1,18 @@
-A Discord chat bot for the TempleOS Technical Discussion Server. Returns
-information on a directory or symbol, with a web link to the definition or
-location within TempleOS, if applicable.
+                            _____ _____ ____  ___ 
+                           |_   _|_   _|    \|_  |
+                             | |   | | |  |  |  _|
+                             |_|   |_| |____/|___|
+
+
+TTD2 is a Discord chat bot for the TempleOS Technical Discussion Server that
+returns information on TempleOS files, directories and symbols in general.
+
 
 INSTALLATION:
     The original TTD bot link is not public for stability reasons, but the bot
     can be self-hosted. Simply install the required packages and run `main.py`.
 
     The bot is sandboxed with `pledge` and `unveil` when run on OpenBSD.
-
 
 USAGE:
     Call with `%%` followed by a TempleOS file path, file name, directory,
@@ -17,8 +22,12 @@ USAGE:
     >> %%wallpaperfish.hc.z
     >> %%DocClear
     >> %%RAX
-    >> Yeah, the function is called %%cd.
+    >> Two important functions are %%cd and %%dir.
     >> %%Adam is both a directory and a symbol.
+
+    TTD2 will respond to the calling message with:
+    - The item's type (Directory, Funct Public, Opcode, etc.)
+    - The items location / definition location, with web link.
 
 Q&A:
     Q: Where is TTD1 bot?
