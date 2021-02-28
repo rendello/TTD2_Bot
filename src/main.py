@@ -74,7 +74,26 @@ def embed_append_symbol(e: discord.Embed, symbol) -> discord.Embed:
         url = f"https://templeos.holyc.xyz/Wb{path}#l{symbol['line']}"
         path_link = f"[{symbol['file']}, line {symbol['line']}]({url})"
 
-    text = f"Type: {symbol['type']}\nDefinition: {path_link}"
+    opcode_ref = ""
+    if symbol["type"] == "OpCode":
+        extra_fields = \
+f"""
+Reference: [x86 reference: {symbol['symbol']}](https://www.felixcloutier.com/x86/{symbol['symbol'].lower()})
+
+See [::/Doc/ASM.DD.Z](https://templeos.holyc.xyz/Wb/Doc/Asm.html)
+And [::/Compliler/OpCodes.DD.Z](https://templeos.holyc.xyz/Wb/Compiler/OpCodes.html)
+"""
+
+    elif symbol["type"] == "Reg":
+        l = ("https://en.wikibooks.org/wiki/X86_Assembly/X86_Architecture"
+        +"#General-Purpose_Registers_(GPR)_-_16-bit_naming_conventions")
+        extra_fields = f"Reference: [Wikibooks: x86 Architecture]({l})"
+
+    else:
+        extra_fields = f"Definition: {path_link}"
+
+
+    text = f"Type: {symbol['type']}\n{extra_fields}"
 
     e.add_field(name=symbol['symbol'], value=text, inline=False)
     return e
