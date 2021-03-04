@@ -20,10 +20,15 @@ if platform.system() == "OpenBSD":
 # ==============================================================================
 async def process_msg(text):
     embed = None
+    too_many_calls = False
 
     matches = re.findall(r"(?:^|\s)%%([\w:\/\.]+)", text)
     if matches == []:
         return None
+    elif len(matches) > 9:
+        matches = matches[:9]
+        too_many_calls = True
+        
 
     embed = discord.Embed(color = 0x55FFFF)
     for match in matches:
@@ -59,6 +64,9 @@ async def process_msg(text):
 
         if not something_found:
             embed = embed_append_error(embed, f"Symbol, path, or path segment not found: {match}")
+
+    if too_many_calls:
+        embed = embed_append_error(embed, "Too many calls, trimmed output.")
 
     return embed
 
