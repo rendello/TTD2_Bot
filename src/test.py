@@ -15,6 +15,10 @@ import discord
 import main
 
 # ==============================================================================
+def field_compare(f1, f2):
+    return f1.name == f2.name and f1.value == f2.value and f1.inline == f2.inline
+
+# ==============================================================================
 
 def test_process_msg_returns_multiple_result_types():
     result = asyncio.run(main.process_msg("%%Adam"))
@@ -34,6 +38,17 @@ def test_process_msg_handles_root_directory():
         assert isinstance(result, discord.Embed)
         assert len(result.fields) == 1
         assert result.fields[0].name == "/"
+
+
+def test_process_msg_combines_common_cases():
+    for s in ("Adam", "Cd", "/", "Man", "RAX", "DocClear"):
+        for i in range(1, 100):
+            previous_fields = []
+            result = asyncio.run(main.process_msg(f"%%{s} " * i))
+            for f1 in result.fields:
+                for f2 in previous_fields:
+                    assert field_compare(f1, f2) == False
+                previous_fields.append(f1)
 
 
 # Hypothesis ===================================================================

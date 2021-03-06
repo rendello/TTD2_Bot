@@ -16,48 +16,58 @@ if platform.system() == "OpenBSD":
 # todo: fuzzy matching.
 # todo: allow multiple path segments per name.
 # todo: allow reprocessing message on edit.
+# todo: empty %% tokenizes message above
 
 # ==============================================================================
 async def process_msg(text):
     embed = None
     too_many_calls = False
 
+    # Get list of ordered, unique, normalized matches.
+    text = text.lower()
     matches = re.findall(r"(?:^|\s)%%([\w:\/\.]+)", text)
     if matches == []:
         return None
-    elif len(matches) > 9:
-        matches = matches[:9]
+
+    unique_matches = []
+    for m in matches:
+        if m not in unique_matches:
+            unique_matches.append(m)
+
+    if len(unique_matches) > 9:
+        unique_matches = unique_matches[:9]
         too_many_calls = True
-        
 
     embed = discord.Embed(color = 0x55FFFF)
-    for match in matches:
 
+    for match in unique_matches:
         if match.endswith("."):
             match = match[:-1]  # Could be part of regex.
 
         something_found = False
+        absolute_path_found = False
 
         # Check against absolute file paths.
-        potential = re.match(r"^(?:[A-Z:]:)?\/(.*?)/?$", match)
+        potential = re.match(r"^(?:[a-z:]:)?\/(.*?)/?$", match)
         if potential is not None:
-            normalized = "/" + potential.group(1).lower()
+            normalized = "/" + potential.group(1)
 
             path = paths.get(normalized)
             if path is not None:
                 embed = embed_append_path(embed, path)
                 something_found = True
+                absolute_path_found = True
 
         # Check against last segments of file paths,
         # ie. `Doc` and `WallPaperFish.HC.Z`.
-        if "/" not in match:
-            path = paths.get(match.lower())
+        if not absolute_path_found:
+            path = paths.get(match)
             if path is not None:
                 embed = embed_append_path(embed, path)
                 something_found = True
 
         # Check against symbol table.
-        symbol = symbols.get(match.lower())
+        symbol = symbols.get(match)
         if symbol is not None:
             embed = embed_append_symbol(embed, symbol)
             something_found = True
