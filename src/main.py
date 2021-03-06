@@ -19,6 +19,21 @@ if platform.system() == "OpenBSD":
 # todo: empty %% tokenizes message above
 
 # ==============================================================================
+
+async def change_status_task():
+    statuses = [
+        "Usage: %%<function>",
+        "Example: %%Dir",
+        "Usage: %%<path>",
+        "Example: %%/Demo/Graphics/WallPaperFish.HC.Z",
+        "Usage: %%<file>",
+        "Example: %%Once.HC",
+    ]
+    for s in statuses:
+        await client.change_presence(activity=discord.Game(s))
+        await asyncio.sleep(15)
+
+
 async def process_msg(text):
     embed = None
     too_many_calls = False
@@ -165,6 +180,8 @@ client = discord.Client()
 async def on_ready():
     if platform.system() == "OpenBSD":
         openbsd.pledge("stdio inet dns prot_exec")
+
+    await client.loop.create_task(change_status_task())
 
 
 @client.event

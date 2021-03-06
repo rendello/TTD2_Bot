@@ -44,7 +44,7 @@ def test_process_msg_combines_common_cases():
     for s in ("Adam", "Cd", "/", "Man", "RAX", "DocClear"):
         for i in range(1, 100):
             previous_fields = []
-            result = asyncio.run(main.process_msg(f"%%{s} " * i))
+            result = asyncio.run(main.process_msg(f"%%{s} %%cd some text" * i))
             for f1 in result.fields:
                 for f2 in previous_fields:
                     assert field_compare(f1, f2) == False
