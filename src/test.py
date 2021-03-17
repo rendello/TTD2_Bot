@@ -51,6 +51,18 @@ def test_process_msg_combines_common_cases():
                 previous_fields.append(f1)
 
 
+def test_process_msg_finds_files_with_incomplete_extensions():
+    variations = ["charter", "charter.dd", "charter.dd.z"]
+
+    previous_results = []
+    for v in variations:
+        result = asyncio.run(main.process_msg(f"%%{v}"))
+        for previous_result in previous_results:
+            assert (len(result) == len(previous_result)
+                and field_compare(result.fields[0], previous_result.fields[0]))
+        previous_results.append(result)
+
+
 # Hypothesis ===================================================================
 
 @hypothesis.given(hypothesis.strategies.text())

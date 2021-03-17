@@ -17,6 +17,7 @@ if platform.system() == "OpenBSD":
 # todo: allow multiple path segments per name.
 # todo: allow reprocessing message on edit.
 # todo: empty %% tokenizes message above
+# todo: seperate match processing from process_msg, will help with above.
 
 # ==============================================================================
 
@@ -224,9 +225,15 @@ paths = {}
 for p in tos_data["paths"]:
     paths[p.lower()] = p
 
-    last_segment = p.split("/")[-1]
+    last_segment = p.split("/")[-1].lower()
     if last_segment != "":
-        paths[last_segment.lower()] = p
+        paths[last_segment] = p
+
+        # ie. charter.dd.z == charter.dd == charter
+        splits = last_segment.split(".")
+        for i in range(0, len(splits)):
+            paths[".".join(splits[:-i])] = p
+            
 
 if __name__ == "__main__":
     client.run(config["token"])
