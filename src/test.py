@@ -21,6 +21,8 @@ def field_compare(f1, f2):
 
 # ==============================================================================
 
+EMBED_ERROR_STR = "[Error]"
+
 def test_process_msg_returns_multiple_result_types():
     result = asyncio.run(main.process_msg("%%Adam"))
     assert isinstance(result, discord.Embed)
@@ -64,11 +66,23 @@ def test_process_msg_finds_files_with_incomplete_extensions():
         previous_results.append(result)
 
 
+# fixme: Requires more reliable metric. Not a guarantee at all currently.
 def test_process_msg_returns_result_for_all_complete_paths():
     with open("symbol.json") as f:
         for path in json.load(f)["paths"]:
-            result = asyncio.run(main.process_msg(f"Some text %%{path} ..."))
-            assert result.fields[0].name != "[Error]"
+            r = asyncio.run(main.process_msg(f"Some text %%{path} ..."))
+            #assert len(r.fields) == 1
+            assert r.fields[0].name != EMBED_ERROR_STR
+
+
+# Currently failing.
+def test_process_msg_returns_result_for_all_symbols():
+    with open("symbol.json") as f:
+        for s in json.load(f)["symbols"]:
+            r = asyncio.run(main.process_msg(f"Some text %%{s['symbol']} ..."))
+            field_names = [f.name for f in r.fields]
+            assert s["symbol"] in field_names
+
 
 # Hypothesis ===================================================================
 

@@ -241,4 +241,3 @@ for p in tos_data["paths"]:
 
 if __name__ == "__main__":
     client.run(config["token"])
-
