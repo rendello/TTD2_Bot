@@ -18,6 +18,10 @@ if platform.system() == "OpenBSD":
 # todo: allow reprocessing message on edit.
 # todo: empty %% tokenizes message above
 # todo: seperate match processing from process_msg, will help with above.
+# check: odd results in sort symbol.json | uniq -cd
+
+# todo: change how path search works:
+#       - Path is first "normalized" by getting the lowercased last section
 
 # ==============================================================================
 
@@ -41,7 +45,7 @@ async def process_msg(text):
 
     # Get list of ordered, unique, normalized matches.
     text = text.lower()
-    matches = re.findall(r"(?:^|\s)%%([\w:\/\.]+)", text)
+    matches = re.findall(r"(?:^|\s)%%([\w:\/\.-]+)", text)
     if matches == []:
         return None
 
@@ -233,7 +237,7 @@ for p in tos_data["paths"]:
         splits = last_segment.split(".")
         for i in range(0, len(splits)):
             paths[".".join(splits[:-i])] = p
-            
+
 
 if __name__ == "__main__":
     client.run(config["token"])

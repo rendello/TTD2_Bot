@@ -7,6 +7,7 @@ tests and are spinning up / tearing down async loops.
 """
 
 import asyncio
+import json
 
 import pytest
 import hypothesis
@@ -63,12 +64,18 @@ def test_process_msg_finds_files_with_incomplete_extensions():
         previous_results.append(result)
 
 
+def test_process_msg_returns_result_for_all_complete_paths():
+    with open("symbol.json") as f:
+        for path in json.load(f)["paths"]:
+            result = asyncio.run(main.process_msg(f"Some text %%{path} ..."))
+            assert result.fields[0].name != "[Error]"
+
 # Hypothesis ===================================================================
 
 @hypothesis.given(hypothesis.strategies.text())
 @hypothesis.settings(max_examples=10_000, deadline=1000)
 @hypothesis.example("%%::/Demo/WallPaperFish.HC.Z")
-def test_process_msg_returns_none_or_embed(s):
+def test_hypothesis_process_msg_returns_none_or_embed(s):
     result = asyncio.run(main.process_msg(s))
     if isinstance(result, discord.Embed):
         assert len(result.fields) > 0
