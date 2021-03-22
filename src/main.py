@@ -13,6 +13,8 @@ import appdirs
 if platform.system() == "OpenBSD":
     import openbsd
 
+import common
+
 # todo: fuzzy matching.
 # todo: allow multiple path segments per name.
 # todo: allow reprocessing message on edit.
@@ -22,7 +24,7 @@ if platform.system() == "OpenBSD":
 
 # todo: change how path search works:
 #       - Path is first "normalized" by getting the lowercased last section
-
+#       - /?([\w-]*)(?:\.\w+)*$
 # ==============================================================================
 
 async def change_status_task():
@@ -174,7 +176,7 @@ def embed_append_path(e: discord.Embed, path) -> discord.Embed:
 
 
 def embed_append_error(e: discord.Embed, error_message) -> discord.Embed:
-    e.add_field(name="[Error]", value=error_message, inline=False)
+    e.add_field(name=common.EMBED_ERROR_STR, value=error_message, inline=False)
     return e
 
 

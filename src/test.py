@@ -8,12 +8,16 @@ tests and are spinning up / tearing down async loops.
 
 import asyncio
 import json
+import re
 
 import pytest
 import hypothesis
 import discord
 
 import main
+import common
+
+# todo: make sure paths handle dashes
 
 # ==============================================================================
 def field_compare(f1, f2):
@@ -21,7 +25,6 @@ def field_compare(f1, f2):
 
 # ==============================================================================
 
-EMBED_ERROR_STR = "[Error]"
 
 def test_process_msg_returns_multiple_result_types():
     result = asyncio.run(main.process_msg("%%Adam"))
@@ -66,13 +69,20 @@ def test_process_msg_finds_files_with_incomplete_extensions():
         previous_results.append(result)
 
 
-# fixme: Requires more reliable metric. Not a guarantee at all currently.
 def test_process_msg_returns_result_for_all_complete_paths():
     with open("symbol.json") as f:
         for path in json.load(f)["paths"]:
+            if path == "/":
+                continue
             r = asyncio.run(main.process_msg(f"Some text %%{path} ..."))
-            #assert len(r.fields) == 1
-            assert r.fields[0].name != EMBED_ERROR_STR
+            field_names = [f.name for f in r.fields]
+            found = False
+            for name in field_names:
+                m = common.PAT_LAST_PATH_SECTION_NO_EXTENSIONS.match(name)
+                assert(m is not None)
+                if m.group(0) == name:
+                    found = True
+            assert found == True
 
 
 # Currently failing.
