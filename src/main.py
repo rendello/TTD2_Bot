@@ -2,21 +2,12 @@
 
 import asyncio
 import pathlib
-import platform
 import re
 import json
 
 import appdirs
 import discord
-
-try:
-    from openbsd import pledge, unveil
-except ModuleNotFoundError:
-    def pledge(*args):
-        pass
-
-    def unveil(*args):
-        pass
+import openbsd
 
 import common
 
@@ -47,65 +38,62 @@ async def change_status_task():
 
 
 async def process_msg(text):
-    embed = None
-    too_many_calls = False
-
-    # Get list of ordered, unique, normalized matches.
-    text = text.lower()
-    matches = re.findall(r"(?:^|\s)%%([\w:\/\.-]+)", text)
-    if matches == []:
-        return None
-
-    unique_matches = []
-    for m in matches:
-        if m not in unique_matches:
-            unique_matches.append(m)
-
-    if len(unique_matches) > 9:
-        unique_matches = unique_matches[:9]
-        too_many_calls = True
+    too_many_lookups = False
+    lookups = []
+    for i, lookup in enumerate(re.findall(common.LOOKUP_PATTERN, text)):
+        if lookup not in lookups:
+            if i <= common.MAX_LOOKUPS_PER_MESSAGE:
+                lookups.append(lookup)
+            else:
+                too_many_lookups = True
+                break
+    if lookups == []:
+        return
 
     embed = discord.Embed(color = 0x55FFFF)
+    for lookup in lookups:
+        pass
 
-    for match in unique_matches:
-        if match.endswith("."):
-            match = match[:-1]  # Could be part of regex.
-
-        something_found = False
-        absolute_path_found = False
-
-        # Check against absolute file paths.
-        potential = re.match(r"^(?:[a-z:]:)?\/(.*?)/?$", match)
-        if potential is not None:
-            normalized = "/" + potential.group(1)
-
-            path = paths.get(normalized)
-            if path is not None:
-                embed = embed_append_path(embed, path)
-                something_found = True
-                absolute_path_found = True
-
-        # Check against last segments of file paths,
-        # ie. `Doc` and `WallPaperFish.HC.Z`.
-        if not absolute_path_found:
-            path = paths.get(match)
-            if path is not None:
-                embed = embed_append_path(embed, path)
-                something_found = True
-
-        # Check against symbol table.
-        symbol = symbols.get(match)
-        if symbol is not None:
-            embed = embed_append_symbol(embed, symbol)
-            something_found = True
-
-        if not something_found:
-            embed = embed_append_error(embed, f"Symbol, path, or path segment not found: {match}")
-
-    if too_many_calls:
-        embed = embed_append_error(embed, "Too many calls, trimmed output.")
+    if too_many_lookups:
+        embed = embed_append_error(embed, "Too many lookups, trimmed output.")
 
     return embed
+
+
+def get_TOS_path_str(path, line=None):
+    is_web_linkable = False
+
+    # "Doc/CutCorners.DD.Z" -> ("Doc/CutCorners", "DD", "Z")
+    path_parts = path.split(".")
+    if len(file_name_parts) > 1:
+        main_extension = path_parts[1]
+
+        extension_info = common.FILE_EXTENION_MAP.get(main_extension)
+        if extension_info is not None:
+            path_type = extension_info["path_type"]
+            is_web_linkable = extension_info["is_web_linkable"]
+        else:
+            path_type = main_extension
+
+        if file_name_parts[-1] == "Z":
+            path_type += " (Compressed)"
+    else:
+        path_type = "Directory"
+
+    if line is not None:
+        line_url_str = f"#l{line}"
+        line_text_str = f", line: {line}"
+    else:
+        line_url_str = ""
+        line_text_str = ""
+
+    if is_web_linkable:
+        url = f"https://templeos.holyc.xyz/Wb{path_parts[0]}.html"
+        path_str = f"[::{path}{line_text_str}]({url}{line_url_str})"
+    else:
+        path_str = f"{path}{line_text_str}"
+
+    return path_type, path_str
 
 
 # Embeds =======================================================================
@@ -145,37 +133,10 @@ And [::/Compliler/OpCodes.DD.Z](https://templeos.holyc.xyz/Wb/Compiler/OpCodes.h
 
 
 def embed_append_path(e: discord.Embed, path) -> discord.Embed:
-    file_types = {
-        "HC": "HolyC",
-        "TXT": "Text",
-        "GRA": "Graphics",
-        "BMP": "Windows Bitmap",
-        "DD": "DolDoc",
-        "IN": "Input",
-        "BIN": "Binary",
-        "CPP": "C++",
-    }
-
-    file_name_parts = path.split(".")
-    if len(file_name_parts) > 1:
-        url_path = file_name_parts[0] + ".html"
-
-        file_type = file_types.get(file_name_parts[1])
-        if file_type is None:
-            file_type = file_name_parts[1]
-
-        if file_name_parts[-1] == "Z":
-            file_type = f"{file_type} (Compressed)"
-    
-    else:
-        url_path = path
-        file_type = "Directory"
-
-
-    url = "https://templeos.holyc.xyz/Wb" + url_path
-    text = f"Type: {file_type}\nPath: [::{path}]({url})"
-
     path_name = path.split("/")[-1] or "/"
+    path_type, path_str = get_TOS_path_str(path)
+    text = f"Type: {path_type}\nPath: {path_str}"
+
     e.add_field(name=path_name, value=text, inline=False)
     return e
 
@@ -190,8 +151,7 @@ client = discord.Client()
 
 @client.event
 async def on_ready():
-    if platform.system() == "OpenBSD":
-        openbsd.pledge("stdio inet dns prot_exec")
+    openbsd.pledge("stdio inet dns prot_exec")
 
     await client.loop.create_task(change_status_task())
 
@@ -220,30 +180,6 @@ else:
     config_dir.mkdir(parents=True, exist_ok=True)
     with open(config_file, "w+") as f:
         json.dump(config, f)
-
-with open("symbol.json", "r") as f:
-    tos_data = json.load(f)
-
-# Make map of symbols. Keys are lowercased symbols.
-symbols = {}
-for s in tos_data["symbols"]:
-    symbols[s["symbol"].lower()] = s
-
-# Make map of full paths, for each value, the keys are:
-#   - the lowercased path,
-#   - The lowercased last segment of the path.
-paths = {}
-for p in tos_data["paths"]:
-    paths[p.lower()] = p
-
-    last_segment = p.split("/")[-1].lower()
-    if last_segment != "":
-        paths[last_segment] = p
-
-        # ie. charter.dd.z == charter.dd == charter
-        splits = last_segment.split(".")
-        for i in range(0, len(splits)):
-            paths[".".join(splits[:-i])] = p
 
 
 if __name__ == "__main__":
