@@ -1,17 +1,22 @@
-# SPDX-License-Identifier: BSD-2-Clause
-
 """ The TTD2 Discord chat bot. """
 
 import asyncio
-import platform
 import pathlib
-import json
+import platform
 import re
+import json
 
-import discord
 import appdirs
-if platform.system() == "OpenBSD":
-    import openbsd
+import discord
+
+try:
+    from openbsd import pledge, unveil
+except ModuleNotFoundError:
+    def pledge(*args):
+        pass
+
+    def unveil(*args):
+        pass
 
 import common
 

@@ -46,6 +46,8 @@ def test_process_msg_handles_root_directory():
         assert result.fields[0].name == "/"
 
 
+# This would fail on cases that have the same output but are called
+# differently, ie. "/" and "C:/". This should be fixed.
 def test_process_msg_combines_common_cases():
     for s in ("Adam", "Cd", "/", "Man", "RAX", "DocClear"):
         for i in range(1, 100):
