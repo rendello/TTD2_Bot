@@ -4,6 +4,7 @@ import asyncio
 import pathlib
 import re
 import json
+import functools
 
 import appdirs
 import discord
@@ -37,6 +38,7 @@ def file_name_variations(file_name):
     return variations
 
 
+@functools.lru_cache()
 def find_symbol_matches(lookup):
     clean_symbol_matches = []
     dirty_symbol_matches = []
@@ -58,6 +60,7 @@ def find_symbol_matches(lookup):
     return clean_symbol_matches, close_matches
 
 
+@functools.lru_cache()
 def find_path_matches(lookup):
     clean_path_matches = []
     dirty_path_matches = []
@@ -165,6 +168,7 @@ def get_TOS_path_str(path, line=None):
             path_type += " (Compressed)"
     else:
         path_type = "Directory"
+        is_web_linkable = True
 
     if line is not None:
         line_url_str = f"#l{line}"
@@ -174,7 +178,11 @@ def get_TOS_path_str(path, line=None):
         line_text_str = ""
 
     if is_web_linkable:
-        url = f"https://templeos.holyc.xyz/Wb{path_parts[0]}.html"
+        if path_type == "Directory":
+            url = f"https://templeos.holyc.xyz/Wb{path_parts[0]}"
+        else:
+            url = f"https://templeos.holyc.xyz/Wb{path_parts[0]}.html"
+
         path_str = f"[::{path}{line_text_str}]({url}{line_url_str})"
     else:
         path_str = f"{path}{line_text_str}"
@@ -186,20 +194,16 @@ def get_TOS_path_str(path, line=None):
 
 # Embeds =======================================================================
 def embed_append_symbol(embed, symbol):
-    if "file" not in symbol:
-        path_link = "N/A"
+    if symbol.get("file") is not None:
+        path_type, path_str, basename = get_TOS_path_str(symbol["file"], symbol["line"])
     else:
-        path = symbol["file"][2:]  # Remove drive letter, ie. "C:"
-        if "." in path:
-            path = path.split(".")[0] + ".html"
-        url = f"https://templeos.holyc.xyz/Wb{path}#l{symbol['line']}"
-        path_link = f"[{symbol['file']}, line {symbol['line']}]({url})"
+        path_str = "N/A"
 
     opcode_ref = ""
     if symbol["type"] == "OpCode":
         extra_fields = \
 f"""
-Reference: [x86 reference: {symbol['symbol']}](https://www.felixcloutier.com/x86/{symbol['symbol'].lower()})
+Reference: [x86 reference: {symbol['name']}](https://www.felixcloutier.com/x86/{symbol['name'].lower()})
 
 See [::/Doc/ASM.DD.Z](https://templeos.holyc.xyz/Wb/Doc/Asm.html)
 And [::/Compliler/OpCodes.DD.Z](https://templeos.holyc.xyz/Wb/Compiler/OpCodes.html)
@@ -211,12 +215,11 @@ And [::/Compliler/OpCodes.DD.Z](https://templeos.holyc.xyz/Wb/Compiler/OpCodes.h
         extra_fields = f"Reference: [Wikibooks: x86 Architecture]({l})"
 
     else:
-        extra_fields = f"Definition: {path_link}"
-
+        extra_fields = f"Definition: {path_str}"
 
     text = f"Type: {symbol['type']}\n{extra_fields}"
 
-    embed.add_field(name=symbol['symbol'], value=text, inline=False)
+    embed.add_field(name=symbol['name'], value=text, inline=False)
     return embed
 
 
@@ -234,7 +237,11 @@ def embed_append_not_found(embed, lookup, symbol_close_matches, path_close_match
     if symbol_close_matches != []:
         text += "Close symbol matches:\n"
         for symbol in symbol_close_matches:
-            text += f"{symbol}\n"
+            if symbol.get("file") is not None:
+                _path_type, path_str, _basename = get_TOS_path_str(symbol["file"], symbol["line"])
+                text += f"`{symbol['name']}`, from {path_str}\n"
+            else:
+                text += f"`{symbol['name']}`\n"
 
     if path_close_matches != []:
         text += "Close path matches:\n"

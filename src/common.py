@@ -17,6 +17,7 @@ BASENAME_NO_EXTENSIONS_PATTERN = re.compile(r"/?([\w-]+)(?:\.\w+)*$")
 # ==============================================================================
 FILE_EXTENSION_MAP = {
     "HC": {"type": "HolyC", "is_web_linkable": True},
+    "HH": {"type": "HolyC Header", "is_web_linkable": True},
     "TXT": {"type": "Text", "is_web_linkable": True},
     "GR": {"type": "Graphics", "is_web_linkable": True},
     "DD": {"type": "DolDoc", "is_web_linkable": True},

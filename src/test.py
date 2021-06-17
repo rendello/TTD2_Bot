@@ -72,7 +72,7 @@ def test_process_msg_finds_files_with_incomplete_extensions():
 
 
 def test_process_msg_returns_result_for_all_complete_paths():
-    with open("symbol.json") as f:
+    with open("symbols.json") as f:
         for path in json.load(f)["paths"]:
             if path == "/":
                 continue
@@ -80,20 +80,20 @@ def test_process_msg_returns_result_for_all_complete_paths():
             field_names = [f.name for f in r.fields]
             found = False
             for name in field_names:
-                m = common.PAT_LAST_PATH_SECTION_NO_EXTENSIONS.match(name)
+                m = common.BASENAME_NO_EXTENSIONS_PATTERN.match(name)
                 assert(m is not None)
                 if m.group(0) == name:
                     found = True
             assert found == True
 
 
-# Currently failing.
 def test_process_msg_returns_result_for_all_symbols():
-    with open("symbol.json") as f:
+    with open("symbols.json") as f:
         for s in json.load(f)["symbols"]:
-            r = asyncio.run(main.process_msg(f"Some text %%{s['symbol']} ..."))
+            print(s)
+            r = asyncio.run(main.process_msg(f"Some text %%{s['name']} ..."))
             field_names = [f.name for f in r.fields]
-            assert s["symbol"] in field_names
+            assert s["name"] in field_names
 
 
 # Hypothesis ===================================================================
