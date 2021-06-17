@@ -52,7 +52,15 @@ async def process_msg(text):
 
     embed = discord.Embed(color = 0x55FFFF)
     for lookup in lookups:
-        pass
+
+    # Check for direct match on symbol
+    # Check for direct match on path
+    # if no path match
+        # Check for partial match on path
+    # if no matches
+        # Fuzzy match symbol
+        # Fuzzy match path
+
 
     if too_many_lookups:
         embed = embed_append_error(embed, "Too many lookups, trimmed output.")
@@ -93,11 +101,13 @@ def get_TOS_path_str(path, line=None):
     else:
         path_str = f"{path}{line_text_str}"
 
-    return path_type, path_str
+    basename = path.split("/")[-1] or "/"
+
+    return path_type, path_str, base_name
 
 
 # Embeds =======================================================================
-def embed_append_symbol(e: discord.Embed, symbol) -> discord.Embed:
+def embed_append_symbol(embed, symbol):
     if "file" not in symbol:
         path_link = "N/A"
     else:
@@ -128,22 +138,21 @@ And [::/Compliler/OpCodes.DD.Z](https://templeos.holyc.xyz/Wb/Compiler/OpCodes.h
 
     text = f"Type: {symbol['type']}\n{extra_fields}"
 
-    e.add_field(name=symbol['symbol'], value=text, inline=False)
-    return e
+    embed.add_field(name=symbol['symbol'], value=text, inline=False)
+    return embed
 
 
-def embed_append_path(e: discord.Embed, path) -> discord.Embed:
-    path_name = path.split("/")[-1] or "/"
-    path_type, path_str = get_TOS_path_str(path)
+def embed_append_path(embed, path):
+    path_type, path_str, base_name = get_TOS_path_str(path)
     text = f"Type: {path_type}\nPath: {path_str}"
 
-    e.add_field(name=path_name, value=text, inline=False)
-    return e
+    embed.add_field(name=path_name, value=text, inline=False)
+    return embed
 
 
-def embed_append_error(e: discord.Embed, error_message) -> discord.Embed:
-    e.add_field(name=common.EMBED_ERROR_STR, value=error_message, inline=False)
-    return e
+def embed_append_error(embed, error_message):
+    embed.add_field(name=common.EMBED_ERROR_STR, value=error_message, inline=False)
+    return embed
 
 
 # Client and callbacks =========================================================
