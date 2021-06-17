@@ -48,12 +48,6 @@ def file_name_variations(file_name):
 
 
 def find_symbol_matches(lookup):
-    """ 
-    Clean matches may differ in case.
-    Dirty matches roughly match fuzzily, and are stored in a tuple of (match,
-        similarity percentage).
-    """
-    
     clean_symbol_matches = []
     dirty_symbol_matches = []
     for symbol in common.TOS_SYMBOLS:
@@ -67,7 +61,7 @@ def find_symbol_matches(lookup):
                 lookup_lowered,
                 symbol_name_lowered
             )
-            if percent_similarity > 60:
+            if percent_similarity > 80:
                 dirty_symbol_matches.append((symbol, percent_similarity))
     print(clean_symbol_matches)
     print(dirty_symbol_matches)
@@ -106,10 +100,15 @@ def find_path_matches(lookup):
             if percent_similarity > 65:
                 dirty_basename_matches.append((path, percent_similarity))
 
-    print(clean_path_matches)
-    print(dirty_path_matches)
-    print(clean_basename_matches)
-    print(dirty_basename_matches)
+    exact_matches = clean_path_matches.copy()
+    for m in clean_basename_matches:
+        if m not in exact_matches:
+            exact_matches.append(m)
+
+    close_matches_unsorted = list(set(dirty_path_matches + dirty_basename_matches))
+    close_matches = [m[0] for m in sorted(close_matches_unsorted, key=lambda x: x[1])]
+
+    return exact_matches, close_matches
 
 
 async def process_msg(text):
