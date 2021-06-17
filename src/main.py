@@ -7,6 +7,7 @@ import json
 
 import appdirs
 import discord
+import fuzzywuzzy.fuzz
 import openbsd
 
 import common
@@ -37,6 +38,80 @@ async def change_status_task():
         await asyncio.sleep(15)
 
 
+def file_name_variations(file_name):
+    """ "Install.HC.Z" -> ["Install.HC.Z", "Install.HC", "Install"] """
+    variations = []
+    sections = file_name.split(".")
+    for i in range(0, len(sections)):
+        variations.append(".".join(sections[:i+1]))
+    return variations
+
+
+def find_symbol_matches(lookup):
+    """ 
+    Clean matches may differ in case.
+    Dirty matches roughly match fuzzily, and are stored in a tuple of (match,
+        similarity percentage).
+    """
+    
+    clean_symbol_matches = []
+    dirty_symbol_matches = []
+    for symbol in common.TOS_SYMBOLS:
+        lookup_lowered = lookup.lower()
+        symbol_name_lowered = symbol["name"].lower()
+
+        if lookup_lowered == symbol_name_lowered:
+            clean_symbol_matches.append(symbol)
+        else:
+            percent_similarity = fuzzywuzzy.fuzz.ratio(
+                lookup_lowered,
+                symbol_name_lowered
+            )
+            if percent_similarity > 60:
+                dirty_symbol_matches.append((symbol, percent_similarity))
+    print(clean_symbol_matches)
+    print(dirty_symbol_matches)
+
+
+def find_path_matches(lookup):
+    clean_path_matches = []
+    dirty_path_matches = []
+    clean_basename_matches = []
+    dirty_basename_matches = []
+
+    for path in common.TOS_PATHS:
+        lookup_lowered = lookup.lower()
+        path_lowered = path.lower()
+
+        # Full path matches.
+        if lookup_lowered in file_name_variations(path_lowered):
+            clean_path_matches.append(path)
+        else:
+            percent_similarity = fuzzywuzzy.fuzz.ratio(
+                lookup_lowered,
+                path_lowered
+            )
+            if percent_similarity > 65:
+                dirty_path_matches.append((path, percent_similarity))
+
+        # Basename matches.
+        basename = path_lowered.split("/")[-1] or "/"
+        if lookup_lowered in file_name_variations(basename):
+            clean_basename_matches.append(path)
+        else:
+            percent_similarity = fuzzywuzzy.fuzz.ratio(
+                lookup_lowered,
+                basename
+            )
+            if percent_similarity > 65:
+                dirty_basename_matches.append((path, percent_similarity))
+
+    print(clean_path_matches)
+    print(dirty_path_matches)
+    print(clean_basename_matches)
+    print(dirty_basename_matches)
+
+
 async def process_msg(text):
     too_many_lookups = False
     lookups = []
@@ -52,15 +127,13 @@ async def process_msg(text):
 
     embed = discord.Embed(color = 0x55FFFF)
     for lookup in lookups:
-
-    # Check for direct match on symbol
-    # Check for direct match on path
-    # if no path match
-        # Check for partial match on path
-    # if no matches
-        # Fuzzy match symbol
-        # Fuzzy match path
-
+        pass
+        pass
+        pass
+        pass
+        pass
+        pass
+        pass
 
     if too_many_lookups:
         embed = embed_append_error(embed, "Too many lookups, trimmed output.")
@@ -69,21 +142,26 @@ async def process_msg(text):
 
 
 def get_TOS_path_str(path, line=None):
+    """ Catogorizes path by extension, then builds and returns:
+        `path_type`, the full name for the type,
+        `path_str`, the markdown version of the path, with link if applicable,
+        `basename`, the final section of the path as seperated by "/".
+    """
     is_web_linkable = False
 
     # "Doc/CutCorners.DD.Z" -> ("Doc/CutCorners", "DD", "Z")
     path_parts = path.split(".")
-    if len(file_name_parts) > 1:
+    if len(path_parts) > 1:
         main_extension = path_parts[1]
 
-        extension_info = common.FILE_EXTENION_MAP.get(main_extension)
+        extension_info = common.FILE_EXTENSION_MAP.get(main_extension)
         if extension_info is not None:
-            path_type = extension_info["path_type"]
+            path_type = extension_info["type"]
             is_web_linkable = extension_info["is_web_linkable"]
         else:
             path_type = main_extension
 
-        if file_name_parts[-1] == "Z":
+        if path_parts[-1] == "Z":
             path_type += " (Compressed)"
     else:
         path_type = "Directory"
@@ -103,7 +181,7 @@ def get_TOS_path_str(path, line=None):
 
     basename = path.split("/")[-1] or "/"
 
-    return path_type, path_str, base_name
+    return path_type, path_str, basename
 
 
 # Embeds =======================================================================
@@ -192,4 +270,5 @@ else:
 
 
 if __name__ == "__main__":
-    client.run(config["token"])
+    #client.run(config["token"])
+    pass
