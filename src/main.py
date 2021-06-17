@@ -12,16 +12,6 @@ import openbsd
 
 import common
 
-# todo: fuzzy matching.
-# todo: allow multiple path segments per name.
-# todo: allow reprocessing message on edit.
-# todo: empty %% tokenizes message above
-# todo: seperate match processing from process_msg, will help with above.
-# check: odd results in sort symbol.json | uniq -cd
-
-# todo: change how path search works:
-#       - Path is first "normalized" by getting the lowercased last section
-#       - /?([\w-]*)(?:\.\w+)*$
 # ==============================================================================
 
 async def change_status_task():
@@ -63,8 +53,9 @@ def find_symbol_matches(lookup):
             )
             if percent_similarity > 80:
                 dirty_symbol_matches.append((symbol, percent_similarity))
-    print(clean_symbol_matches)
-    print(dirty_symbol_matches)
+
+    close_matches = [m[0] for m in sorted(dirty_symbol_matches, key=lambda x: x[1])]
+    return clean_symbol_matches, close_matches
 
 
 def find_path_matches(lookup):
@@ -111,6 +102,22 @@ def find_path_matches(lookup):
     return exact_matches, close_matches
 
 
+def process_lookup(embed, lookup, show_all=False):
+    exact_symbol_matches, symbol_close_matches = find_symbol_matches(lookup)
+    exact_path_matches, path_close_matches = find_path_matches(lookup)
+
+    for symbol in (exact_symbol_matches):
+        embed_append_symbol(embed, symbol)
+
+    for path in (exact_path_matches):
+        embed_append_path(embed, path)
+
+    if exact_symbol_matches == [] and exact_path_matches == []:
+        embed_append_not_found(embed, lookup, symbol_close_matches, path_close_matches)
+
+    return embed
+
+
 async def process_msg(text):
     too_many_lookups = False
     lookups = []
@@ -126,13 +133,7 @@ async def process_msg(text):
 
     embed = discord.Embed(color = 0x55FFFF)
     for lookup in lookups:
-        pass
-        pass
-        pass
-        pass
-        pass
-        pass
-        pass
+        embed = process_lookup(embed, lookup)
 
     if too_many_lookups:
         embed = embed_append_error(embed, "Too many lookups, trimmed output.")
@@ -220,10 +221,28 @@ And [::/Compliler/OpCodes.DD.Z](https://templeos.holyc.xyz/Wb/Compiler/OpCodes.h
 
 
 def embed_append_path(embed, path):
-    path_type, path_str, base_name = get_TOS_path_str(path)
+    path_type, path_str, basename = get_TOS_path_str(path)
     text = f"Type: {path_type}\nPath: {path_str}"
 
-    embed.add_field(name=path_name, value=text, inline=False)
+    embed.add_field(name=basename, value=text, inline=False)
+    return embed
+
+
+def embed_append_not_found(embed, lookup, symbol_close_matches, path_close_matches):
+    text = f"Path or symbol not found: {lookup}\n\n"
+
+    if symbol_close_matches != []:
+        text += "Close symbol matches:\n"
+        for symbol in symbol_close_matches:
+            text += f"{symbol}\n"
+
+    if path_close_matches != []:
+        text += "Close path matches:\n"
+        for path in path_close_matches:
+            _path_type, path_str, _basename = get_TOS_path_str(path)
+            text += f"{path_str}\n"
+    
+    embed.add_field(name="Not found.", value=text, inline=False)
     return embed
 
 
@@ -269,5 +288,5 @@ else:
 
 
 if __name__ == "__main__":
-    #client.run(config["token"])
+    client.run(config["token"])
     pass
