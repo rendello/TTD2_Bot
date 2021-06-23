@@ -170,6 +170,7 @@ def create_in_memory_database():
 
 
 def look_up(TOS_version, needle, con, cur):
+    needle_escaped = needle.replace("_", r"\_")
     if "/" in needle:
         cur.execute(
             r"""
@@ -181,7 +182,7 @@ def look_up(TOS_version, needle, con, cur):
             )
             AND `TOS_version` = (?)
             """,
-            [needle, needle.replace("_", r"\_")+".%", TOS_version]
+            [needle, needle_escaped+".%", TOS_version]
         )
     else:
         cur.execute(
@@ -194,7 +195,7 @@ def look_up(TOS_version, needle, con, cur):
             )
             AND `TOS_version` = (?)
             """,
-            [needle, needle.replace("_", r"\_")+".%", TOS_version]
+            [needle, needle_escaped+".%", TOS_version]
         )
     tuple_path_matches = cur.fetchall()
     path_matches = []

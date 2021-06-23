@@ -60,10 +60,9 @@ async def process_msg(text):
 
     return embed
 
-
 # Embeds =======================================================================
-def embed_append_symbol(embed, symbol):
 
+def embed_append_symbol(embed, symbol):
     text = f"Type: {symbol['type']}\n"
 
     if symbol["type"] == "OpCode":
@@ -104,12 +103,10 @@ def embed_append_error(embed, error_message):
     return embed
 
 
-# Client and callbacks =========================================================
+# ==============================================================================
 
 @client.event
 async def on_ready():
-    openbsd.pledge("stdio inet dns prot_exec")
-
     await client.loop.create_task(change_status_task())
 
 
@@ -121,23 +118,14 @@ async def on_message(msg):
 
 # ==============================================================================
 
-# Load token from config. If not available, prompt for token and
-# create config.
-config_dir = pathlib.Path(appdirs.user_config_dir("TTD2_bot"))
-config_file = config_dir.joinpath("config.json")
-
-if config_file.exists():
-    with open(config_file, "r") as f:
-        config = json.load(f)
-else:
-    config = {}
-    print("Config doesn't exist. Creating one. [ctrl+c to cancel]")
-    config["token"] = input("Bot token: ")
-    config_dir.mkdir(parents=True, exist_ok=True)
-    with open(config_file, "w+") as f:
-        json.dump(config, f)
-
-
 if __name__ == "__main__":
+    config_dir = pathlib.Path(appdirs.user_config_dir("TTD2_bot"))
+    config_file = config_dir.joinpath("config.json")
+
+    if config_file.exists():
+        with open(config_file, "r") as f:
+            config = json.load(f)
+
+    openbsd.pledge("stdio inet dns prot_exec")
+
     client.run(config["token"])
-    pass
