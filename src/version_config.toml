@@ -1,0 +1,22 @@
+
+# TempleOS versions and forks have their data in the `TOS_versions` directory.
+# Each folder contains:
+#
+# `Who.DD`, which contains the output from `Who;`.
+#
+# `Paths.DD`, which contains the output from `FF("*");`, run from the root dir
+# on a clean system.
+#
+# These files have TempleOS' cursor character stripped.
+
+
+versions = [
+    {
+        name = "TempleOS_5.3",
+        base_url = "templeos.holyc.xyz/Wb/"
+    },
+    {
+        name = "TinkerOS",
+        base_url = "https://tinkeros.github.io/WbGit/"
+    }
+]
