@@ -109,11 +109,11 @@ def process_lookup(embed, lookup, show_all=False):
     exact_symbol_matches, symbol_close_matches = find_symbol_matches(lookup)
     exact_path_matches, path_close_matches = find_path_matches(lookup)
 
-    for symbol in (exact_symbol_matches):
-        embed_append_symbol(embed, symbol)
-
     for path in (exact_path_matches):
         embed_append_path(embed, path)
+
+    for symbol in (exact_symbol_matches):
+        embed_append_symbol(embed, symbol)
 
     if exact_symbol_matches == [] and exact_path_matches == []:
         embed_append_not_found(embed, lookup, symbol_close_matches, path_close_matches)

@@ -30,8 +30,8 @@ def test_process_msg_returns_multiple_result_types():
     result = asyncio.run(main.process_msg("%%Adam"))
     assert isinstance(result, discord.Embed)
     assert len(result.fields) == 2
-    assert "Directory" in result.fields[0].value
     assert "Funct Public" in result.fields[1].value
+    assert "Directory" in result.fields[0].value
 
 
 def test_process_msg_handles_root_directory():
