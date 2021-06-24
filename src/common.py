@@ -21,4 +21,4 @@ LOOKUP_PATTERN = re.compile(r"(?:^|\s)%%(?:\(([\w\.]+)\))?([\w:\/\.-]+(?<!\.))")
 
 BASENAME_NO_EXTENSIONS_PATTERN = re.compile(r"/?([\w-]+)(?:\.\w+)*$")
 
-PATH_WITHOUT_DRIVE_PATTERN = re.compile(r"^(?:[A-Z]:)?((?:\/[\w-]+)(?:\.\w+)*)")
+PATH_WITHOUT_DRIVE_PATTERN = re.compile(r"^(?:[A-Z:]:)?((?:\/[\w-]+)(?:\.\w+)*)")
