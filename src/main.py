@@ -165,6 +165,7 @@ async def on_message_edit(old_msg, new_msg):
     else:
         if reply is not None:
             await reply.delete()
+            del recent_replies[new_msg]
 
 
 @client.event
@@ -172,6 +173,7 @@ async def on_message_delete(msg):
     reply = recent_replies.get(msg)
     if reply is not None:
         await reply.delete()
+        del recent_replies[msg]
 
 
 # ==============================================================================
