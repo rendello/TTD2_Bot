@@ -191,7 +191,15 @@ def create_in_memory_database():
 
 def look_up(TOS_version, needle, con, cur):
     needle_escaped = needle.replace("_", r"\_")
+
     if "/" in needle:
+        try:
+            path_needle = re.match(common.PATH_WITHOUT_DRIVE_PATTERN, needle).group(1)
+            path_needle_escaped = path_needle.replace("_", r"\_")
+        except AttributeError:
+            path_needle = needle
+            path_needle_escaped = needle_escaped
+
         cur.execute(
             r"""
             SELECT full_path, basename, type, is_compressed, TOS_version
@@ -202,7 +210,7 @@ def look_up(TOS_version, needle, con, cur):
             )
             AND `TOS_version` = (?)
             """,
-            [needle, needle_escaped+".%", TOS_version]
+            [path_needle, path_needle_escaped+".%", TOS_version]
         )
     else:
         cur.execute(

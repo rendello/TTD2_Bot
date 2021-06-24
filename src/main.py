@@ -99,12 +99,10 @@ And [::/Compliler/OpCodes.DD.Z](https://templeos.holyc.xyz/Wb/Compiler/OpCodes.h
         +"#General-Purpose_Registers_(GPR)_-_16-bit_naming_conventions")
         text += f"Reference: [Wikibooks: x86 Architecture]({l})\n"
     else:
-        link = data.path_to_link(symbol["file"], symbol["line"], TOS_version)
-        if symbol["line"] is not None:
+        if symbol["file"] is not None:
+            link = data.path_to_link(symbol["file"], symbol["line"], TOS_version)
             line_str = ", line " + str(symbol["line"])
-        else:
-            line_str = ""
-        text += f"Definition: [{symbol['file']}{line_str}]({link})\n"
+            text += f"Definition: [{symbol['file']}{line_str}]({link})\n"
 
     embed.add_field(name=symbol['name'], value=text, inline=False)
     return embed

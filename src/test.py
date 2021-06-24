@@ -101,6 +101,7 @@ def test_process_msg_returns_result_for_all_symbols():
 @hypothesis.given(hypothesis.strategies.text())
 @hypothesis.settings(max_examples=10_000, deadline=1000)
 @hypothesis.example("%%::/Demo/WallPaperFish.HC.Z")
+@hypothesis.example("%%(TinkerOS)c")
 def test_hypothesis_process_msg_returns_none_or_embed(s):
     result = asyncio.run(main.process_msg(s))
     if isinstance(result, discord.Embed):
