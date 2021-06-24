@@ -6,6 +6,8 @@ import random
 
 import toml
 
+import common
+
 # 1: name, 2: file (if applicable), 3: line (if applicable), 4: type.
 SYMBOL_PATTERN = re.compile(r"^(?:\$LK,\")?([\w/]+)(?:\s*\",A=\"FL:[A-Z]:([/\w\.]+),(\d+)\S+)?.*? ((?:[A-Z][a-z].*|NULL)) $")
 
@@ -89,6 +91,24 @@ def path_expand_info(path):
 
 def get_paths(TOS_version):
     return [path_expand_info(p) for p in get_bare_paths(TOS_version)]
+
+
+def path_to_link(bare_path, line, TOS_version):
+    path = path_expand_info(bare_path)
+    if "." in path["basename"]:
+        url_basename = path["basename"].split(".")[0]+".html"
+    else:
+        url_basename = path["basename"]
+
+    url_end = "/".join(path["full_path"].split("/")[:-1]+[url_basename])
+    base_url = common.TOS_VERSION_BASE_URL_MAP[TOS_version]
+
+    if line is None:
+        url_line = ""
+    else:
+        url_line = "#l" + str(line)
+
+    return base_url + url_end + url_line
 
 # =============================================================================
 

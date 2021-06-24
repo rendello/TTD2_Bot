@@ -7,9 +7,9 @@ EMBED_ERROR_STR = "[Error]"
 TOS_VERSIONS = ["TempleOS_5.3", "TinkerOS"]
 DEFAULT_TOS_VERSION = "TempleOS_5.3"
 
-TOS_VERSION_BASE_URLS = {
-    "TempleOS_5.3": "templeos.holyc.xyz/Wb/",
-    "TinkerOS": "https://tinkeros.github.io/WbGit/"
+TOS_VERSION_BASE_URL_MAP = {
+    "TempleOS_5.3": "https://templeos.holyc.xyz/Wb",
+    "TinkerOS": "https://tinkeros.github.io/WbGit"
 }
 
 # Patterns =====================================================================

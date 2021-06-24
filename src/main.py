@@ -73,7 +73,6 @@ async def process_msg(text):
             for sm in symbol_matches:
                 embed = embed_append_symbol(embed, sm, TOS_version)
             
-
     if too_many_lookups:
         embed = embed_append_error(embed, "Too many needles, trimmed output.")
 
@@ -100,7 +99,12 @@ And [::/Compliler/OpCodes.DD.Z](https://templeos.holyc.xyz/Wb/Compiler/OpCodes.h
         +"#General-Purpose_Registers_(GPR)_-_16-bit_naming_conventions")
         text += f"Reference: [Wikibooks: x86 Architecture]({l})\n"
     else:
-        text += f"Definition: {symbol['file']}\n"
+        link = data.path_to_link(symbol["file"], symbol["line"], TOS_version)
+        if symbol["line"] is not None:
+            line_str = ", line " + str(symbol["line"])
+        else:
+            line_str = ""
+        text += f"Definition: [{symbol['file']}{line_str}]({link})\n"
 
     embed.add_field(name=symbol['name'], value=text, inline=False)
     return embed
@@ -110,7 +114,9 @@ def embed_append_path(embed, path, TOS_version):
     text = str()
     if TOS_version != common.DEFAULT_TOS_VERSION:
         text += f"(Version: {TOS_version})\n"
-    text += f"Type: {path['type']}\nPath: {path['full_path']}"
+
+    link = data.path_to_link(path["full_path"], None, TOS_version)
+    text += f"Type: {path['type']}\nPath: [{path['full_path']}]({link})"
 
     embed.add_field(name=path['basename'], value=text, inline=False)
     return embed
@@ -129,7 +135,6 @@ def embed_append_not_found(embed, needle, TOS_version):
 def embed_append_error(embed, error_message):
     embed.add_field(name=common.EMBED_ERROR_STR, value=error_message, inline=False)
     return embed
-
 
 # ==============================================================================
 
