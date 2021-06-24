@@ -9,7 +9,7 @@ import toml
 import common
 
 # 1: name, 2: file (if applicable), 3: line (if applicable), 4: type.
-SYMBOL_PATTERN = re.compile(r"^(?:\$LK,\")?([\w/]+)(?:\s*\",A=\"FL:[A-Z]:([/\w\.]+),(\d+)\S+)?.*? ((?:[A-Z][a-z].*|NULL)) $")
+SYMBOL_PATTERN = re.compile(r"^(?:\$LK,\")?([\w/:\/.]+)(?:\s*\",A=\"FL:[A-Z]:([/\w\.]+),(\d+)\S+)?.*? ((?:[A-Z][a-z].*|NULL)) $")
 
 # 1: full path.
 PATH_PATTERN = re.compile(r"^\$LK,\"[A-Z]:([\w/\.]+)")
