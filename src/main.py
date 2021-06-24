@@ -7,6 +7,7 @@ import json
 import functools
 
 import appdirs
+import cachetools
 import discord
 import openbsd
 
@@ -17,6 +18,7 @@ import data
 
 db_con, db_cur = data.create_in_memory_database()
 client = discord.Client()
+recent_replies = cachetools.FIFOCache(maxsize=50)
 
 # ==============================================================================
 
@@ -145,7 +147,32 @@ async def on_ready():
 async def on_message(msg):
     embed = await process_msg(msg.content)
     if embed is not None:
-        await msg.channel.send(embed = embed)
+        reply = await msg.reply(embed = embed, mention_author=False)
+        recent_replies[msg] = reply
+
+
+@client.event
+async def on_message_edit(old_msg, new_msg):
+    embed = await process_msg(new_msg.content)
+    reply = recent_replies.get(old_msg)
+
+    if embed is not None:
+        if reply is not None:
+            await reply.edit(embed = embed)
+        else:
+            reply = await new_msg.reply(embed = embed, mention_author=False)
+            recent_replies[new_msg] = reply
+    else:
+        if reply is not None:
+            await reply.delete()
+
+
+@client.event
+async def on_message_delete(msg):
+    reply = recent_replies.get(msg)
+    if reply is not None:
+        await reply.delete()
+
 
 # ==============================================================================
 
