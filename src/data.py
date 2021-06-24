@@ -174,7 +174,7 @@ def look_up(TOS_version, needle, con, cur):
     if "/" in needle:
         cur.execute(
             r"""
-            SELECT full_path, basename, type, is_compressed
+            SELECT full_path, basename, type, is_compressed, TOS_version
             FROM `paths`
             WHERE (
                 `full_path` = ?
@@ -187,7 +187,7 @@ def look_up(TOS_version, needle, con, cur):
     else:
         cur.execute(
             r"""
-            SELECT full_path, basename, type, is_compressed
+            SELECT full_path, basename, type, is_compressed, TOS_version
             FROM `paths`
             WHERE (
                 `basename` = ?
@@ -205,13 +205,14 @@ def look_up(TOS_version, needle, con, cur):
                 "full_path": m[0],
                 "basename": m[1],
                 "type": m[2],
-                "is_compressed": bool(m[3])
+                "is_compressed": bool(m[3]),
+                "TOS_version": m[4]
             }
         )
 
     cur.execute(
         """
-        SELECT name, file, line, type
+        SELECT name, file, line, type, TOS_version
         FROM `symbols` WHERE `TOS_version` = (?) AND `name` = ?
         """,
         [TOS_version, needle]
@@ -224,7 +225,8 @@ def look_up(TOS_version, needle, con, cur):
                 "name": m[0],
                 "file": m[1],
                 "line": m[2],
-                "type": m[3]
+                "type": m[3],
+                "TOS_version": m[4]
             }
         )
 

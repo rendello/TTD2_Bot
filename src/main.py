@@ -28,7 +28,17 @@ async def change_status_task():
             await asyncio.sleep(15)
 
 
+def normalize_TOS_version(tv):
+    if tv == "":
+        return common.DEFAULT_TOS_VERSION
+
+    index = [s.lower() for s in common.TOS_VERSIONS].index(tv.lower())
+    if index is not None:
+        return common.TOS_VERSIONS[index]
+
+
 async def process_msg(text):
+    # A "lookup" is a (TOS_version, needle) pair.
     too_many_lookups = False
     lookups = []
     for i, lookup in enumerate(re.findall(common.LOOKUP_PATTERN, text)):
@@ -42,28 +52,40 @@ async def process_msg(text):
         return
 
     embed = discord.Embed(color = 0x55FFFF)
-    for lookup in lookups:
-        path_matches, symbol_matches = data.look_up("TempleOS_5.3", lookup, db_con, db_cur)
+    for (TOS_version, needle) in lookups:
+        try:
+            TOS_version = normalize_TOS_version(TOS_version)
+        except ValueError:
+            embed = embed_append_error(
+                embed,
+                f"TOS version not found.\nValid versions: {','.join(common.TOS_VERSIONS)}"
+            )
+            continue
+
+        path_matches, symbol_matches = data.look_up(TOS_version, needle, db_con, db_cur)
 
         if path_matches == [] and symbol_matches == []:
-            embed = embed_append_not_found(embed, lookup)
+            embed = embed_append_not_found(embed, needle, TOS_version)
         else:
             for pm in path_matches:
-                embed = embed_append_path(embed, pm)
+                embed = embed_append_path(embed, pm, TOS_version)
 
             for sm in symbol_matches:
-                embed = embed_append_symbol(embed, sm)
+                embed = embed_append_symbol(embed, sm, TOS_version)
             
 
     if too_many_lookups:
-        embed = embed_append_error(embed, "Too many lookups, trimmed output.")
+        embed = embed_append_error(embed, "Too many needles, trimmed output.")
 
     return embed
 
 # Embeds =======================================================================
 
-def embed_append_symbol(embed, symbol):
-    text = f"Type: {symbol['type']}\n"
+def embed_append_symbol(embed, symbol, TOS_version):
+    text = str()
+    if TOS_version != common.DEFAULT_TOS_VERSION:
+        text += f"(Version: {TOS_version})\n"
+    text += f"Type: {symbol['type']}\n"
 
     if symbol["type"] == "OpCode":
         text += \
@@ -84,15 +106,21 @@ And [::/Compliler/OpCodes.DD.Z](https://templeos.holyc.xyz/Wb/Compiler/OpCodes.h
     return embed
 
 
-def embed_append_path(embed, path):
-    text = f"Type: {path['type']}\nPath: {path['full_path']}"
+def embed_append_path(embed, path, TOS_version):
+    text = str()
+    if TOS_version != common.DEFAULT_TOS_VERSION:
+        text += f"(Version: {TOS_version})\n"
+    text += f"Type: {path['type']}\nPath: {path['full_path']}"
 
     embed.add_field(name=path['basename'], value=text, inline=False)
     return embed
 
 
-def embed_append_not_found(embed, needle):
-    text = f"Path or symbol not found: {needle}\n\n"
+def embed_append_not_found(embed, needle, TOS_version):
+    text = str()
+    if TOS_version != common.DEFAULT_TOS_VERSION:
+        text += f"(Version: {TOS_version})\n"
+    text += f"Path or symbol not found: {needle}\n"
 
     embed.add_field(name="Not found.", value=text, inline=False)
     return embed
