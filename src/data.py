@@ -53,6 +53,7 @@ def get_bare_paths(TOS_version):
                 if dir_path not in paths:
                     paths.append(dir_path)
 
+        paths.append("/")
         return paths
 
 
@@ -95,7 +96,9 @@ def get_paths(TOS_version):
 
 def path_to_link(bare_path, line, TOS_version):
     path = path_expand_info(bare_path)
-    if "." in path["basename"]:
+    if bare_path == "/":
+        url_basename = ""
+    elif "." in path["basename"]:
         url_basename = path["basename"].split(".")[0]+".html"
     else:
         url_basename = path["basename"]
@@ -111,15 +114,6 @@ def path_to_link(bare_path, line, TOS_version):
     return base_url + url_end + url_line
 
 # =============================================================================
-
-def database_dict_factory(cursor, row):
-    """ Make `fetch` return dicts instead of tuples,
-    when used as a SQLite connection's `row_factory`. """
-    d = {}
-    for idx, col in enumerate(cursor.description):
-        d[col[0]] = row[idx]
-    return d
-
 
 def create_in_memory_database():
     con = sqlite3.connect(":memory:")
