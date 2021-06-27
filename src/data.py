@@ -12,7 +12,7 @@ import common
 SYMBOL_PATTERN = re.compile(r"^(?:\$LK,\")?([\w/:\/.]+)(?:\s*\",A=\"FL:[A-Z]:([/\w\.]+),(\d+)\S+)?.*? ((?:[A-Z][a-z].*|NULL)) $")
 
 # 1: full path.
-PATH_PATTERN = re.compile(r"^\$LK,\"[A-Z]:([\w/\.]+)")
+PATH_PATTERN = re.compile(r"^\$LK,\"[A-Z]:([\w/\.-]+)")
 
 # =============================================================================
 
