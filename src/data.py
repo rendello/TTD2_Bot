@@ -278,3 +278,45 @@ def get_random_symbol_or_path(TOS_version, con, cur):
         [TOS_version]
     )
     return cur.fetchone()[0]
+
+
+def get_all_symbols(TOS_version, con, cur):
+    cur.execute(
+        r"""
+        SELECT name, file, line, type FROM `symbols`
+        WHERE `TOS_version` = (?) 
+        """,
+        [TOS_version]
+    )
+    symbols = []
+    for m in cur.fetchall():
+        symbols.append(
+            {
+                "name": m[0],
+                "file": m[1],
+                "line": m[2],
+                "type": m[3],
+            }
+        )
+    return symbols
+
+
+def get_all_paths(TOS_version, con, cur):
+    cur.execute(
+        r"""
+        SELECT full_path, basename, type, is_compressed from `paths`
+        WHERE `TOS_version` = (?) 
+        """,
+        [TOS_version]
+    )
+    paths = []
+    for m in cur.fetchall():
+        paths.append(
+            {
+                "full_path": m[0],
+                "basename": m[1],
+                "type": m[2],
+                "is_compressed": bool(m[3]),
+            }
+        )
+    return paths

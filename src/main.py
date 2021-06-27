@@ -68,11 +68,11 @@ async def process_msg(text):
         if path_matches == [] and symbol_matches == []:
             embed = embed_append_not_found(embed, needle, TOS_version)
         else:
-            for pm in path_matches:
-                embed = embed_append_path(embed, pm, TOS_version)
-
             for sm in symbol_matches:
                 embed = embed_append_symbol(embed, sm, TOS_version)
+
+            for pm in path_matches:
+                embed = embed_append_path(embed, pm, TOS_version)
 
         if len(embed.fields) > common.MAX_FIELDS_PER_MESSAGE:
             for i in range(len(embed.fields)-common.MAX_FIELDS_PER_MESSAGE+1):
@@ -185,11 +185,11 @@ async def on_message_delete(msg):
 
 # ==============================================================================
 
-if __name__ == "__main__":
-    config_dir = pathlib.Path(appdirs.user_config_dir("TTD2_bot"))
-    config_file = config_dir.joinpath("config.json")
-
-    with open(config_file, "r") as f:
-        config = json.load(f)
-
-    client.run(config["token"])
+#if __name__ == "__main__":
+#    config_dir = pathlib.Path(appdirs.user_config_dir("TTD2_bot"))
+#    config_file = config_dir.joinpath("config.json")
+#
+#    with open(config_file, "r") as f:
+#        config = json.load(f)
+#
+#    client.run(config["token"])

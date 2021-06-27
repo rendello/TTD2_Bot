@@ -12,6 +12,7 @@ import hypothesis
 import discord
 
 import main
+import data
 import common
 
 # ==============================================================================
@@ -25,8 +26,8 @@ def test_process_msg_returns_multiple_result_types():
     result = asyncio.run(main.process_msg("%%Adam"))
     assert isinstance(result, discord.Embed)
     assert len(result.fields) == 2
-    assert "Funct Public" in result.fields[1].value
-    assert "Directory" in result.fields[0].value
+    assert "Funct Public" in result.fields[0].value
+    assert "Directory" in result.fields[1].value
 
 
 def test_process_msg_handles_root_directory():
@@ -41,6 +42,9 @@ def test_process_msg_handles_root_directory():
         assert result.fields[0].name == "/"
 
 
+# !! Currently failing. May be better to remove duplicates down
+# the line, when strings or even results are normalized.
+#
 # This would fail on cases that have the same output but are called
 # differently, ie. "/" and "C:/". This should be fixed.
 def test_process_msg_combines_common_cases():
@@ -66,29 +70,28 @@ def test_process_msg_finds_files_with_incomplete_extensions():
         previous_results.append(result)
 
 
-#def test_process_msg_returns_result_for_all_complete_paths():
-#    with open("symbols.json") as f:
-#        for path in json.load(f)["paths"]:
-#            if path == "/":
-#                continue
-#            r = asyncio.run(main.process_msg(f"Some text %%{path} ..."))
-#            field_names = [f.name for f in r.fields]
-#            found = False
-#            for name in field_names:
-#                m = common.BASENAME_NO_EXTENSIONS_PATTERN.match(name)
-#                assert(m is not None)
-#                if m.group(0) == name:
-#                    found = True
-#            assert found == True
-#
-#
-#def test_process_msg_returns_result_for_all_symbols():
-#    with open("symbols.json") as f:
-#        for s in json.load(f)["symbols"]:
-#            print(s)
-#            r = asyncio.run(main.process_msg(f"Some text %%{s['name']} ..."))
-#            field_names = [f.name for f in r.fields]
-#            assert s["name"] in field_names
+def test_process_msg_returns_result_for_all_complete_paths():
+    for version in common.TOS_VERSIONS:
+        for path in data.get_all_paths(version, main.db_con, main.db_cur):
+            if path['basename'] == "/":
+                continue
+            r = asyncio.run(main.process_msg(f"Some text %%({version}){path['full_path']} ..."))
+            field_names = [f.name for f in r.fields]
+            found = False
+            for name in field_names:
+                m = common.BASENAME_NO_EXTENSIONS_PATTERN.match(name)
+                assert(m is not None)
+                if m.group(0) == name:
+                    found = True
+            assert found == True
+
+
+def test_process_msg_returns_result_for_all_symbols():
+    for version in common.TOS_VERSIONS:
+        for s in data.get_all_symbols(version, main.db_con, main.db_cur):
+            r = asyncio.run(main.process_msg(f"Some text %%({version}){s['name']} ..."))
+            field_names = [f.name for f in r.fields]
+            assert s["name"] in field_names
 
 
 # Hypothesis ===================================================================
