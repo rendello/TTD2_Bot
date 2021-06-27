@@ -140,6 +140,7 @@ def embed_append_error(embed, error_message):
 
 @client.event
 async def on_ready():
+    openbsd.pledge("stdio inet dns prot_exec")
     await client.loop.create_task(change_status_task())
 
 
@@ -185,7 +186,5 @@ if __name__ == "__main__":
     if config_file.exists():
         with open(config_file, "r") as f:
             config = json.load(f)
-
-    openbsd.pledge("stdio inet dns prot_exec")
 
     client.run(config["token"])
