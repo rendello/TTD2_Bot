@@ -1,5 +1,3 @@
-# SPDX-License-Identifier: BSD-2-Clause
-
 """ Tests to be run with pytest. Eg. `pytest test.py -v -s`
 
 Hypothesis tests will take a long time to complete, as they are running a lot of
@@ -7,7 +5,6 @@ tests and are spinning up / tearing down async loops.
 """
 
 import asyncio
-import json
 import re
 
 import pytest
@@ -16,8 +13,6 @@ import discord
 
 import main
 import common
-
-# todo: make sure paths handle dashes
 
 # ==============================================================================
 def field_compare(f1, f2):
@@ -71,29 +66,29 @@ def test_process_msg_finds_files_with_incomplete_extensions():
         previous_results.append(result)
 
 
-def test_process_msg_returns_result_for_all_complete_paths():
-    with open("symbols.json") as f:
-        for path in json.load(f)["paths"]:
-            if path == "/":
-                continue
-            r = asyncio.run(main.process_msg(f"Some text %%{path} ..."))
-            field_names = [f.name for f in r.fields]
-            found = False
-            for name in field_names:
-                m = common.BASENAME_NO_EXTENSIONS_PATTERN.match(name)
-                assert(m is not None)
-                if m.group(0) == name:
-                    found = True
-            assert found == True
-
-
-def test_process_msg_returns_result_for_all_symbols():
-    with open("symbols.json") as f:
-        for s in json.load(f)["symbols"]:
-            print(s)
-            r = asyncio.run(main.process_msg(f"Some text %%{s['name']} ..."))
-            field_names = [f.name for f in r.fields]
-            assert s["name"] in field_names
+#def test_process_msg_returns_result_for_all_complete_paths():
+#    with open("symbols.json") as f:
+#        for path in json.load(f)["paths"]:
+#            if path == "/":
+#                continue
+#            r = asyncio.run(main.process_msg(f"Some text %%{path} ..."))
+#            field_names = [f.name for f in r.fields]
+#            found = False
+#            for name in field_names:
+#                m = common.BASENAME_NO_EXTENSIONS_PATTERN.match(name)
+#                assert(m is not None)
+#                if m.group(0) == name:
+#                    found = True
+#            assert found == True
+#
+#
+#def test_process_msg_returns_result_for_all_symbols():
+#    with open("symbols.json") as f:
+#        for s in json.load(f)["symbols"]:
+#            print(s)
+#            r = asyncio.run(main.process_msg(f"Some text %%{s['name']} ..."))
+#            field_names = [f.name for f in r.fields]
+#            assert s["name"] in field_names
 
 
 # Hypothesis ===================================================================

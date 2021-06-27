@@ -1,5 +1,4 @@
 import re
-import json
 
 MAX_LOOKUPS_PER_MESSAGE = 9
 EMBED_ERROR_STR = "[Error]"

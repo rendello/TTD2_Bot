@@ -4,7 +4,6 @@ import asyncio
 import pathlib
 import re
 import json
-import functools
 
 import appdirs
 import cachetools
