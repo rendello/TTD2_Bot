@@ -179,13 +179,18 @@ def create_in_memory_database():
     return con, cur
 
 
+def needle_normalize_escapes(needle):
+    " Escape underscore wildcards, convert star wildcards to SQL wildcards. "
+    return needle.replace("_", r"\_").replace("*", "%")
+
+
 def look_up(TOS_version, needle, con, cur):
-    needle_escaped = needle.replace("_", r"\_")
+    needle_escaped = needle_normalize_escapes(needle)
 
     if "/" in needle:
         try:
             path_needle = re.match(common.PATH_WITHOUT_DRIVE_PATTERN, needle).group(1)
-            path_needle_escaped = path_needle.replace("_", r"\_")
+            path_needle_escaped = needle_normalize_escapes(path_needle)
         except AttributeError:
             path_needle = needle
             path_needle_escaped = needle_escaped
@@ -197,10 +202,11 @@ def look_up(TOS_version, needle, con, cur):
             WHERE (
                 `full_path` = ?
                 OR `full_path` LIKE ? ESCAPE '\'
+                OR `full_path` LIKE ? ESCAPE '\'
             )
             AND `TOS_version` = (?)
             """,
-            [path_needle, path_needle_escaped+".%", TOS_version]
+            [path_needle, path_needle_escaped, path_needle_escaped+".%", TOS_version]
         )
     else:
         cur.execute(
@@ -210,10 +216,11 @@ def look_up(TOS_version, needle, con, cur):
             WHERE (
                 `basename` = ?
                 OR `basename` LIKE ? ESCAPE '\'
+                OR `basename` LIKE ? ESCAPE '\'
             )
             AND `TOS_version` = (?)
             """,
-            [needle, needle_escaped+".%", TOS_version]
+            [needle, needle_escaped, needle_escaped+".%", TOS_version]
         )
     tuple_path_matches = cur.fetchall()
     path_matches = []
@@ -229,11 +236,15 @@ def look_up(TOS_version, needle, con, cur):
         )
 
     cur.execute(
-        """
+        r"""
         SELECT name, file, line, type, TOS_version
-        FROM `symbols` WHERE `TOS_version` = (?) AND `name` = ?
+        FROM `symbols` WHERE (
+            `name` = ?
+            OR `name` LIKE ? ESCAPE '\'
+        )
+        AND `TOS_version` = (?) 
         """,
-        [TOS_version, needle]
+        [needle, needle_escaped, TOS_version]
     )
     tuple_symbol_matches = cur.fetchall()
     symbol_matches = []

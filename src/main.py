@@ -73,6 +73,13 @@ async def process_msg(text):
 
             for sm in symbol_matches:
                 embed = embed_append_symbol(embed, sm, TOS_version)
+
+        if len(embed.fields) > common.MAX_FIELDS_PER_MESSAGE:
+            for i in range(len(embed.fields)-common.MAX_FIELDS_PER_MESSAGE+1):
+                embed.remove_field(-1)
+
+            embed = embed_append_error(embed, "Too many results, trimmed output.")
+            break
             
     if too_many_lookups:
         embed = embed_append_error(embed, "Too many needles, trimmed output.")
