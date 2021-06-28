@@ -185,11 +185,11 @@ async def on_message_delete(msg):
 
 # ==============================================================================
 
-#if __name__ == "__main__":
-#    config_dir = pathlib.Path(appdirs.user_config_dir("TTD2_bot"))
-#    config_file = config_dir.joinpath("config.json")
-#
-#    with open(config_file, "r") as f:
-#        config = json.load(f)
-#
-#    client.run(config["token"])
+if __name__ == "__main__":
+    config_dir = pathlib.Path(appdirs.user_config_dir("TTD2_bot"))
+    config_file = config_dir.joinpath("config.json")
+
+    with open(config_file, "r") as f:
+        config = json.load(f)
+
+    client.run(config["token"])
