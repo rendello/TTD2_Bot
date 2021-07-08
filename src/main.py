@@ -63,6 +63,14 @@ async def process_msg(text):
             )
             continue
 
+        MAX_NEEDLE_LEN = 100
+        if len(needle) > MAX_NEEDLE_LEN:
+            embed = embed_append_error(
+                embed,
+                f"Search term too long: '{needle[:MAX_NEEDLE_LEN]} …' ({len(needle)}/{MAX_NEEDLE_LEN})"
+            )
+            continue
+
         path_matches, symbol_matches = data.look_up(TOS_version, needle, db_con, db_cur)
 
         if path_matches == [] and symbol_matches == []:
