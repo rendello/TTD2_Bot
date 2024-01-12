@@ -4,13 +4,15 @@
                              |_|   |_| |____/|___|
 
 
-TTD2 is a Discord chat bot for the TempleOS Technical Discussion Server that
-returns information on TempleOS files, directories and symbols in general.
+TTD2 is a Discord chat bot that returns information on TempleOS files,
+directories and symbols.
 
 
 INSTALLATION:
-    The original TTD bot link is not public for stability reasons, but the bot
-    can be self-hosted. Simply install the required packages and run `main.py`.
+    - `python3.xx -m pip install appdirs cachetools discord`
+    - `cd /src`
+    - `python 3.xx main.py` (give it a token to use and save)
+    - (restart it when it inevitably crashes)
 
     The bot is sandboxed with `pledge` and `unveil` when run on OpenBSD.
 
@@ -29,19 +31,9 @@ USAGE:
     - The item's type (Directory, Funct Public, Opcode, etc.)
     - The items location / definition location, with web link.
 
-Q&A:
-    Q: Where is TTD1 bot?
-    A: We don't talk about TTD1 bot.
-
-    Q: Where is the TempleOS Technical Discussion server link?
-    A: There's no public link, but contact me if you want an invite. It's a small,
-       moderated server where we talk about TempleOS and HolyC and related tech.
-
-    Q: Why can't I see its messages?
-    A: You need to have Discord embeds enabled in your settings.
 
 LICENSE:
-    Copyright 2021 Rendello
+    Copyright 2024 Rendello
 
     Redistribution and use in source and binary forms, with or without
     modification, are permitted provided that the following conditions are met:
