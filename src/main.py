@@ -3,20 +3,28 @@
 import asyncio
 import pathlib
 import re
-import json
+import sys
 
 import appdirs
 import cachetools
 import discord
-import openbsd
+
+IS_OPENBSD = True if sys.platform.startswith("openbsd") else False
+if IS_OPENBSD:
+    import openbsd
 
 import common
 import data
 
 # ==============================================================================
 
+intents = discord.Intents.default()
+intents.members = True
+intents.messages = True
+intents.message_content = True
+client = discord.Client(intents=intents)
+
 db_con, db_cur = data.create_in_memory_database()
-client = discord.Client()
 recent_replies = cachetools.FIFOCache(maxsize=50)
 
 # ==============================================================================
@@ -107,8 +115,8 @@ def embed_append_symbol(embed, symbol, TOS_version):
 f"""
 Reference: [x86 reference: {symbol['name']}](https://www.felixcloutier.com/x86/{symbol['name'].lower()})
 
-See [::/Doc/ASM.DD.Z](https://templeos.holyc.xyz/Wb/Doc/Asm.html)
-And [::/Compliler/OpCodes.DD.Z](https://templeos.holyc.xyz/Wb/Compiler/OpCodes.html)\n
+See [::/Doc/ASM.DD.Z](https://tinkeros.github.io/WbTempleOS/Doc/Asm.html)
+And [::/Compliler/OpCodes.DD.Z](https://tinkeros.github.io/WbTempleOS/Compiler/OpCodes.html)\n
 """
     elif symbol["type"] == "Reg":
         l = ("https://en.wikibooks.org/wiki/X86_Assembly/X86_Architecture"
@@ -154,7 +162,8 @@ def embed_append_error(embed, error_message):
 
 @client.event
 async def on_ready():
-    openbsd.pledge("stdio inet dns prot_exec")
+    if IS_OPENBSD:
+        openbsd.pledge("stdio inet dns prot_exec")
     await client.loop.create_task(change_status_task())
 
 
@@ -193,11 +202,41 @@ async def on_message_delete(msg):
 
 # ==============================================================================
 
+CONFIG_DIR = pathlib.Path(appdirs.user_config_dir("TTD2_bot"))
+CONFIG_FILE_PATH = CONFIG_DIR.joinpath("token.txt")
+
+
+def set_token():
+    s = (
+        "==========================================================================\n" +
+        "Proper token not found. A `token.txt` file will be created/overwritten at:\n" +
+        str(CONFIG_FILE_PATH) + "\n" +
+        "==========================================================================\n"
+    )
+
+    print(s)
+
+    token = input("Please enter the token: ").strip()
+    if len(token) < 5:
+        print("Token too short and thus invalid. Failing.")
+        return
+
+    pathlib.Path(CONFIG_DIR).mkdir(parents=True, exist_ok=True)
+    with open(CONFIG_FILE_PATH, "w+") as f:
+        f.write(token)
+
+
+def get_token():
+    with open(CONFIG_FILE_PATH, "r") as f:
+        return f.read().strip()
+
+# ==============================================================================
+
 if __name__ == "__main__":
-    config_dir = pathlib.Path(appdirs.user_config_dir("TTD2_bot"))
-    config_file = config_dir.joinpath("config.json")
-
-    with open(config_file, "r") as f:
-        config = json.load(f)
-
-    client.run(config["token"])
+    try:
+        client.run(get_token())
+    except (FileNotFoundError, discord.errors.LoginFailure) as e:
+        print("!!! FAILED !!!")
+        print(e)
+        print("!!! SET TOKEN AND TRY AGAIN !!!")
+        set_token()

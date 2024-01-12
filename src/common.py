@@ -8,7 +8,7 @@ TOS_VERSIONS = ["TempleOS_5.3", "TinkerOS"]
 DEFAULT_TOS_VERSION = "TempleOS_5.3"
 
 TOS_VERSION_BASE_URL_MAP = {
-    "TempleOS_5.3": "https://templeos.holyc.xyz/Wb",
+    "TempleOS_5.3": "https://tinkeros.github.io/WbTempleOS",
     "TinkerOS": "https://tinkeros.github.io/WbGit"
 }
 
